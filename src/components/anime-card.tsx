@@ -69,7 +69,7 @@ const AnimeCard = ({
               {props.watchDetail && (
                 <>
                   <p className="text-xs text-gray-400">
-                    Episode {props.watchDetail.episodeNumber} -{" "}
+                    Bölüm {props.watchDetail.episodeNumber} -{" "}
                     {formatSecondsToMMSS(props.watchDetail.current)} /{" "}
                     {formatSecondsToMMSS(props.watchDetail.timestamp)}
                   </p>
@@ -79,7 +79,7 @@ const AnimeCard = ({
               <div className="flex flex-wrap items-center gap-1.5 mt-0.5">
                 {props.episodeCard && !!props.episodes && (
                   <Badge className="bg-[#e9376b] text-white text-[10px] px-1.5 py-0.5">
-                    Ep {props.episodes}
+                    Bölüm {props.episodes}
                   </Badge>
                 )}
                 {props.format && (

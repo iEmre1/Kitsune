@@ -157,11 +157,11 @@ const EpisodePlaylist = ({
     episodes && (
       <div className="col-span-1 flex flex-col w-full gap-5 border-[.0313rem] border-secondary rounded-md overflow-hidden min-h-[20vh] sm:min-h-[30vh] md:min-h-[40vh] lg:min-h-[60vh] max-h-[500px]">
         <div className="h-fit bg-[#18181a] px-5 py-3">
-          <h3 className="text-lg font-semibold"> Episode Playlist</h3>
+          <h3 className="text-lg font-semibold"> Bölüm Listesi</h3>
           <span className="text-sm font-thin">{title}</span>
           <div className="flex flex-row w-full items-center justify-between gap-2 mt-2">
             <Input
-              placeholder="Search Episode"
+              placeholder="Bölüm Ara"
               value={search}
               onChange={handleOnSearchChange}
               className="w-1/2"
@@ -192,7 +192,7 @@ const EpisodePlaylist = ({
                 />
               </div>
             ))}
-          {!filteredEpisodes?.length && !isLoading && "No Episodes"}
+          {!filteredEpisodes?.length && !isLoading && "Bölüm bulunamadı"}
           {isLoading && <PlaylistSkeleton />}
         </div>
       </div>

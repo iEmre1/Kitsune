@@ -74,7 +74,7 @@ const EpisodeCard = ({
             !isSelected && hasWatchedEpisode && "bg-slate-900 text-gray-400",
           ])}
         >
-          {`Episode ${props.episode.number}`}
+          {`Bölüm ${props.episode.number}`}
         </div>
       </Link>
     );
@@ -94,7 +94,7 @@ const EpisodeCard = ({
           ])}
         >
           <div className="flex items-center gap-2 min-w-0">
-            <span className="shrink-0">{`Episode ${props.episode.number}`}</span>
+            <span className="shrink-0">{`Bölüm ${props.episode.number}`}</span>
             {props.episode.title && props.episode.title !== `Episode ${props.episode.number}` && (
               <span className="text-xs opacity-75 line-clamp-1 font-normal">
                 - {props.episode.title}

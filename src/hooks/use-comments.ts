@@ -167,7 +167,7 @@ export const useAddComment = () => {
   return useMutation({
     mutationFn: async (input: AddCommentInput) => {
       if (!auth) {
-        throw new Error("You must be logged in to comment.");
+        throw new Error("Yorum yapabilmek için giriş yapmalısınız.");
       }
 
       const newRecord = await pb.collection("comments").create({
@@ -182,14 +182,14 @@ export const useAddComment = () => {
       return newRecord;
     },
     onSuccess: () => {
-      toast.success("Comment posted successfully!", {
+      toast.success("Yorum başarıyla gönderildi!", {
         style: { background: "green" },
       });
       queryClient.invalidateQueries({ queryKey: [GET_COMMENTS_KEY] });
       queryClient.invalidateQueries({ queryKey: [GET_RECENT_COMMENTS_KEY] });
     },
     onError: (error: any) => {
-      toast.error(error?.message || "Failed to post comment", {
+      toast.error(error?.message || "Yorum gönderilemedi", {
         style: { background: "red" },
       });
     },

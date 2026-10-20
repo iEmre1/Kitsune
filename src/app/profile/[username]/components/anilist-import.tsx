@@ -28,7 +28,7 @@ function AnilistImport() {
 
   const onSubmitStepOne = async () => {
     if (!username || username.trim() === "") {
-      toast.warning("Please enter a valid Anilist username", {
+      toast.warning("Lütfen geçerli bir AniList kullanıcı adı girin", {
         style: { background: "orange" },
       });
       return;
@@ -43,7 +43,7 @@ function AnilistImport() {
       }
     } catch (error) {
       console.error("Error importing Anilist anime:", error);
-      toast.error("Failed to import Anilist anime", {
+      toast.error("AniList animeleri içe aktarılamadı", {
         style: { background: "red" },
       });
     }
@@ -70,7 +70,7 @@ function AnilistImport() {
 
   const onSubmitStepTwo = async () => {
     if (animes.length === 0) {
-      toast.warning("No animes to import", {
+      toast.warning("İçe aktarılacak anime yok", {
         style: { background: "orange" },
       });
       return;
@@ -92,7 +92,7 @@ function AnilistImport() {
             media.title?.english ||
             media.title?.romaji ||
             media.title?.native ||
-            "Untitled";
+            "Başlıksız";
           const thumbnail =
             media.coverImage?.extraLarge ||
             media.coverImage?.large ||
@@ -110,14 +110,14 @@ function AnilistImport() {
         }
       }
 
-      toast.success(`Successfully imported ${importedCount} anime from AniList!`, {
+      toast.success(`${importedCount} anime AniList'ten başarıyla içe aktarıldı!`, {
         style: { background: "green" },
       });
       setOpen(false);
       reset();
     } catch (error) {
       console.error("Error importing Anilist anime:", error);
-      toast.error("Failed to import Anilist anime", {
+      toast.error("AniList animeleri içe aktarılamadı", {
         style: { background: "red" },
       });
     }
@@ -148,21 +148,21 @@ function AnilistImport() {
         <DialogContent className="">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
-              Import from Anilist
+              AniList'ten İçe Aktar
               <Badge className="bg-blue-500 text-white hover:bg-blue-500">
                 Beta
               </Badge>
             </DialogTitle>
             <DialogDescription>
-              Please note that import from Anilist is a beta feature and may not
-              succeed if you have a large number of animes in your list.
+              AniList'ten içe aktarma işlemi bir beta özelliğidir ve listenizde
+              çok sayıda anime varsa başarılı olmayabilir.
             </DialogDescription>
           </DialogHeader>
           {step === 1 && (
             <>
               <div className="grid gap-4 py-4">
                 <Input
-                  placeholder="Enter Anilist Username"
+                  placeholder="AniList Kullanıcı Adını Girin"
                   value={username}
                   onChange={(e) => setUsername(e.target.value)}
                 />
@@ -176,7 +176,7 @@ function AnilistImport() {
                   type="submit"
                   onClick={onSubmitStepOne}
                 >
-                  Continue
+                  Devam
                 </Button>
               </DialogFooter>
             </>
@@ -185,7 +185,7 @@ function AnilistImport() {
             <>
               <div>
                 <h2 className="text-md font-semibold mb-2">
-                  Following animes will be imported:
+                  Aşağıdaki animeler içe aktarılacak:
                 </h2>
               </div>
               <div>
@@ -193,7 +193,7 @@ function AnilistImport() {
                   {animes.map((anime) => (
                     <li key={anime.name} className="mb-2">
                       <span className="font-semibold">{anime.name}:</span>{" "}
-                      {anime.entries.length} entries
+                      {anime.entries.length} kayıt
                     </li>
                   ))}
                 </ul>
@@ -201,7 +201,7 @@ function AnilistImport() {
               <DialogFooter className="items-center">
                 {isLoading && (
                   <p className="text-xs text-gray-400">
-                    Please be patient as it may take some while to import
+                    İçe aktarma biraz zaman alabilir, lütfen sabırlı olun
                   </p>
                 )}
                 <Button
@@ -212,7 +212,7 @@ function AnilistImport() {
                   type="submit"
                   onClick={onSubmitStepTwo}
                 >
-                  Import
+                  İçe Aktar
                 </Button>
               </DialogFooter>
             </>

@@ -116,47 +116,47 @@ const SearchResults = () => {
   return (
     <div className="flex flex-col gap-10 mt-28 lg:mt-36 pb-20 min-h-[75vh]">
       <div className="bg-slate-800/50 backdrop-blur-md border border-white/10 rounded-lg p-5 flex flex-col gap-5">
-        <p className="text-lg font-semibold">Filters</p>
+        <p className="text-lg font-semibold">Filtreler</p>
         <div className="flex flex-wrap gap-3">
           <Select
             options={types}
-            placeholder="Type"
+            placeholder="Tür"
             value={filters.type}
             onChange={(val) => onChange("type", val)}
           />
           <Select
             options={statuses}
-            placeholder="Status"
+            placeholder="Durum"
             value={filters.status}
             onChange={(val) => onChange("status", val)}
           />
           <Select
             options={ratings}
-            placeholder="Rated"
+            placeholder="Sınıflandırma"
             value={filters.rated}
             onChange={(val) => onChange("rated", val)}
           />
           <Select
             options={seasons}
-            placeholder="Season"
+            placeholder="Sezon"
             value={filters.season}
             onChange={(val) => onChange("season", val)}
           />
           <Select
             options={languages}
-            placeholder="Language"
+            placeholder="Dil"
             value={filters.language}
             onChange={(val) => onChange("language", val)}
           />
           <Select
             options={sort}
-            placeholder="Sort"
+            placeholder="Sırala"
             value={filters.sort}
             onChange={(val) => onChange("sort", val)}
           />
         </div>
         <div>
-          <p className="text-lg font-semibold mt-4">Genres</p>
+          <p className="text-lg font-semibold mt-4">Türler</p>
           <ToggleGroup
             type="multiple"
             className="flex flex-wrap justify-start gap-2 mt-4"
@@ -189,7 +189,7 @@ const SearchResults = () => {
             className="w-[6.25rem] hover:bg-[#e9376b] bg-[#e9376b] text-white"
             onClick={applyFilters}
           >
-            Filter
+            Filtrele
           </Button>
           <Button
             size="sm"
@@ -197,16 +197,16 @@ const SearchResults = () => {
             onClick={resetFilters}
             variant="link"
           >
-            Reset
+            Sıfırla
           </Button>
         </div>
       </div>
       <div className="text-2xl font-semibold">
         {displayPhrase === "" ? (
-          "Filter Results"
+          "Filtrelenmiş Sonuçlar"
         ) : (
           <>
-            Search Results for{" "}
+            {"Arama Sonuçları: "}
             <span className="font-[800]">&quot;{params.q}&quot;</span>
           </>
         )}

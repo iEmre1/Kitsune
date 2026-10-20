@@ -87,7 +87,7 @@ function AnimeLists({ status, userId }: Props) {
     </>
   ) : (
     <div className="flex justify-center items-center h-64">
-      <p className="text-gray-500">No anime found</p>
+      <p className="text-gray-500">Anime bulunamadı</p>
     </div>
   );
 }

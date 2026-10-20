@@ -9,6 +9,16 @@ import { ROUTES } from "@/constants/routes";
 import { Badge } from "./ui/badge";
 import { Clock, Play } from "lucide-react";
 
+const DAY_LABELS_TR: Record<string, string> = {
+  sunday: "Pazar",
+  monday: "Pazartesi",
+  tuesday: "Salı",
+  wednesday: "Çarşamba",
+  thursday: "Perşembe",
+  friday: "Cuma",
+  saturday: "Cumartesi",
+};
+
 function AnimeSchedule() {
   const currentDate = new Date();
   const baseDays = [
@@ -51,8 +61,8 @@ function AnimeSchedule() {
   return (
     <Container className="flex flex-col gap-6 py-10 items-start">
       <div className="flex flex-col gap-1">
-        <h5 className="text-2xl md:text-3xl font-bold text-white">Estimated Schedule</h5>
-        <p className="text-sm text-gray-400">Track upcoming episode releases for this week</p>
+        <h5 className="text-2xl md:text-3xl font-bold text-white">Tahmini Yayın Takvimi</h5>
+        <p className="text-sm text-gray-400">Bu hafta yayınlanacak bölümleri takip edin</p>
       </div>
 
       <Tabs
@@ -76,10 +86,10 @@ function AnimeSchedule() {
               >
                 <div className="flex flex-col items-start">
                   <span className="font-bold text-sm uppercase tracking-wider">
-                    {day}
+                    {DAY_LABELS_TR[day] ?? day}
                   </span>
                   <span className="text-[11px] opacity-75">
-                    {dateObj.toLocaleDateString("en-US", {
+                    {dateObj.toLocaleDateString("tr-TR", {
                       month: "short",
                       day: "numeric",
                     })}
@@ -87,7 +97,7 @@ function AnimeSchedule() {
                 </div>
                 {isToday && (
                   <Badge className="bg-yellow-500/20 text-yellow-300 border border-yellow-500/40 text-[10px] ml-2">
-                    Today
+                    Bugün
                   </Badge>
                 )}
               </TabsTrigger>
@@ -107,10 +117,10 @@ function AnimeSchedule() {
                     {data?.scheduledAnimes.map((anime, idx) => {
                       const timeFormatted = new Date(
                         anime.airingTimestamp,
-                      ).toLocaleTimeString("en-US", {
+                      ).toLocaleTimeString("tr-TR", {
                         hour: "numeric",
                         minute: "2-digit",
-                        hour12: true,
+                        hour12: false,
                       });
 
                       return (
@@ -149,14 +159,14 @@ function AnimeSchedule() {
 
                             <div className="flex items-center justify-between gap-2 mt-2">
                               <Badge className="bg-[#e9376b]/20 text-[#e9376b] border border-[#e9376b]/40 text-[10px] px-2 py-0.5">
-                                Ep {anime.episode}
+                                Bölüm {anime.episode}
                               </Badge>
                               <Link href={`${ROUTES.ANIME_DETAILS}/${anime.id}`}>
                                 <Button
                                   size="sm"
                                   className="h-7 text-xs bg-slate-800 hover:bg-[#e9376b] text-white px-2.5 rounded-lg flex items-center gap-1 transition"
                                 >
-                                  <Play className="h-3 w-3 fill-current" /> Details
+                                  <Play className="h-3 w-3 fill-current" /> Detaylar
                                 </Button>
                               </Link>
                             </div>

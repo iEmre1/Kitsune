@@ -26,11 +26,11 @@ const LatestEpisodesAnime = ({ loading: initialLoading }: Props) => {
 
   return (
     <Container className="flex flex-col gap-5 py-10 items-center lg:items-start lg:mt-[-10.125rem] z-20">
-      <h5 className="text-2xl font-bold text-white">Recent Releases</h5>
+      <h5 className="text-2xl font-bold text-white">Son Bölümler</h5>
       <div className="grid lg:grid-cols-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7 w-full gap-5 content-center">
         {episodesList.map((anime, idx) => {
           const title =
-            anime.title?.english || anime.title?.romaji || anime.title?.native || "Untitled";
+            anime.title?.english || anime.title?.romaji || anime.title?.native || "Başlıksız";
           const poster =
             anime.coverImage?.extraLarge || anime.coverImage?.large || "";
           const epNum = anime.episodes || 1;

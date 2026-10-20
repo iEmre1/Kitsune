@@ -16,7 +16,7 @@ const FeaturedCollectionCard = (props: Props) => {
       <h5 className="text-lg font-semibold pt-5 text-center">{props.title}</h5>
       <div className="w-full relative grow flex">
         {props.anime.slice(0, 3).map((item, index) => {
-          const title = item.title?.english || item.title?.romaji || item.title?.native || "Untitled";
+          const title = item.title?.english || item.title?.romaji || item.title?.native || "Başlıksız";
           const poster = item.coverImage?.extraLarge || item.coverImage?.large || "";
           const classNames = [
             "absolute md:bottom-[-5.25rem] bottom-[-4.25rem] left-[15%] rotate-[-20deg] w-[9.375rem] border-[.50rem] border-[#212121]",

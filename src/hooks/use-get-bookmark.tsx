@@ -124,7 +124,7 @@ function useBookMarks({
         if (res.totalItems > 0) {
           if (res.items[0].status === targetStatus) {
             if (showToast) {
-              toast.error("Already in this status", {
+              toast.error("Zaten bu durumda", {
                 style: { background: "red" },
               });
             }
@@ -144,7 +144,7 @@ function useBookMarks({
             );
 
           if (showToast) {
-            toast.success("Successfully updated status", {
+            toast.success("Durum başarıyla güncellendi", {
               style: { background: "green" },
             });
           }
@@ -163,7 +163,7 @@ function useBookMarks({
           );
 
           if (showToast) {
-            toast.success("Successfully added to list", {
+            toast.success("Listeye başarıyla eklendi", {
               style: { background: "green" },
             });
           }

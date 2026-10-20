@@ -114,7 +114,7 @@ function AnimeHeatmap() {
     } catch (error: any) {
       if (!error?.isAbort) {
         console.error("Error fetching or aggregating watch history:", error);
-        toast.error("Failed to load watch activity.");
+        toast.error("İzleme etkinliği yüklenemedi.");
       }
       setHeatmapData([]);
       setTotalContributionCount(0);
@@ -154,16 +154,16 @@ function AnimeHeatmap() {
     if (!val?.date) {
       return {
         "data-tooltip-id": "heatmap-tooltip",
-        "data-tooltip-content": "No episodes watched",
+        "data-tooltip-content": "İzlenen bölüm yok",
       };
     }
-    const formatedDate = new Date(val.date).toLocaleDateString("en-US", {
+    const formatedDate = new Date(val.date).toLocaleDateString("tr-TR", {
       month: "short",
       day: "numeric",
     });
     return {
       "data-tooltip-id": "heatmap-tooltip",
-      "data-tooltip-content": `Watched ${val.count} episodes on ${formatedDate}`,
+      "data-tooltip-content": `${formatedDate} tarihinde ${val.count} bölüm izlendi`,
     } as Record<string, string>;
   };
 
@@ -179,10 +179,10 @@ function AnimeHeatmap() {
   return (
     <>
       <p className="text-lg font-bold mb-4">
-        Watched {totalContributionCount} episodes in the last year
+        Son yılda {totalContributionCount} bölüm izlendi
       </p>
       <CalendarHeatmap
-        weekdayLabels={["", "M", "", "W", "", "F", ""]}
+        weekdayLabels={["", "P", "", "Ç", "", "C", ""]}
         showWeekdayLabels={true}
         showOutOfRangeDays={true}
         startDate={startDate}

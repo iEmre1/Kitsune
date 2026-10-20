@@ -417,7 +417,7 @@ const VideoPlayerSection = () => {
             <div className="flex flex-wrap items-center gap-2.5">
               <Captions className="text-red-400 h-4 w-4 shrink-0" />
               <p className="font-bold text-xs text-gray-300 tracking-wider">
-                SERVERS (SUB):
+                SUNUCULAR (ALTYAZI):
               </p>
               {subProvidersForEp.map((pName) => {
                 const isActive =
@@ -447,7 +447,7 @@ const VideoPlayerSection = () => {
             <div className="flex flex-wrap items-center gap-2.5">
               <Mic className="text-green-400 h-4 w-4 shrink-0" />
               <p className="font-bold text-xs text-gray-300 tracking-wider">
-                SERVERS (DUB):
+                SUNUCULAR (DUBLAJ):
               </p>
               {dubProvidersForEp.map((pName) => {
                 const isActive =
@@ -483,7 +483,7 @@ const VideoPlayerSection = () => {
               className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 hover:bg-emerald-900/60 transition-colors"
             >
               <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              Companion Active
+              Companion Aktif
               <ExternalLink className="h-3 w-3 opacity-75" />
             </a>
           )}
@@ -501,8 +501,8 @@ const VideoPlayerSection = () => {
           >
             <Tv className="h-3.5 w-3.5 text-yellow-400" />
             {isFallbackActive && subProvidersForEp.length > 0
-              ? "Switch to Primary Player"
-              : "Switch to Fallback Player"}
+              ? "Birincil Oynatıcıya Geç"
+              : "Yedek Oynatıcıya Geç"}
           </Button>
           {!isFallbackActive && (
             <div className="flex flex-row items-center space-x-2">
@@ -511,7 +511,7 @@ const VideoPlayerSection = () => {
                 onCheckedChange={(e) => onHandleAutoSkipChange(e)}
                 id="auto-skip"
               />
-              <p>Auto Skip</p>
+              <p>Otomatik Atla</p>
             </div>
           )}
         </div>
@@ -526,13 +526,13 @@ const VideoPlayerSection = () => {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
             <div>
               <AlertTitle className="font-bold">
-                Fallback Video Player Activated
+                Yedek Video Oynatıcı Etkinleştirildi
               </AlertTitle>
               <AlertDescription className="text-xs text-amber-200/80 mt-1">
-                The primary video player is unavailable for this stream.
-                Download the{" "}
-                <strong className="text-amber-100">Kitsune Companion</strong>{" "}
-                app for a smooth, ad-free experience in the primary player.
+                Bu yayın için birincil video oynatıcı kullanılamıyor.
+                Kesintisiz, reklamsız bir deneyim için{" "}
+                <strong className="text-amber-100">Animke Companion</strong>{" "}
+                uygulamasını indirin.
               </AlertDescription>
             </div>
             <Button
@@ -547,7 +547,7 @@ const VideoPlayerSection = () => {
                 className="inline-flex items-center gap-1.5"
               >
                 <Download className="h-3.5 w-3.5" />
-                Download Companion App
+                Companion Uygulamasını İndir
               </a>
             </Button>
           </div>
@@ -558,12 +558,12 @@ const VideoPlayerSection = () => {
         <Alert className="border-indigo-800/80 bg-indigo-950/40 text-indigo-200 rounded-xl">
           <AlertCircle className="h-4 w-4 text-indigo-400" />
           <AlertTitle className="font-bold">
-            Episode {nextAiring.episode} Airing Soon
+            Bölüm {nextAiring.episode} Yakında Yayınlanacak
           </AlertTitle>
           <AlertDescription className="text-xs text-indigo-200/80 mt-1">
-            Next episode airs in{" "}
-            {nextAiringDays > 0 ? `${nextAiringDays}d ` : ""}
-            {nextAiringHours}h.
+            Sonraki bölümün yayınlanmasına{" "}
+            {nextAiringDays > 0 ? `${nextAiringDays} gün ` : ""}
+            {nextAiringHours} saat kaldı.
           </AlertDescription>
         </Alert>
       )}

@@ -67,7 +67,7 @@ const SearchBar = ({
       <SearchIcon suppressHydrationWarning className="absolute inset-y-0 left-2 m-auto h-4 w-4" />
       <Input
         className="w-full h-10 pl-8 text-white border-white"
-        placeholder="Enter your keywords to search..."
+        placeholder="Aramak için anahtar kelimelerinizi girin..."
         onChange={(e) => setSearchValue(e.target.value)}
         onFocus={() => setIsFocused(true)}
         value={searchValue}
@@ -80,7 +80,7 @@ const SearchBar = ({
           router.push(ROUTES.SEARCH + '?q=""');
         }}
       >
-        <Tooltip side="bottom" content="Filter">
+        <Tooltip side="bottom" content="Filtre">
           <SlidersHorizontal suppressHydrationWarning className="h-4 w-4" />
         </Tooltip>
       </Button>
@@ -102,7 +102,7 @@ const SearchBar = ({
               })}
 
             {!isLoading && searchResults && searchResults.length === 0 && (
-              <p className="text-sm text-gray-400 py-4 text-center">No anime found</p>
+              <p className="text-sm text-gray-400 py-4 text-center">Anime bulunamadı</p>
             )}
 
             {searchResults?.map((anime) => (
@@ -140,7 +140,7 @@ const SearchBar = ({
               onClick={handleAnimeClick}
             >
               <Button className="w-full bg-[#e9376b] text-white">
-                Show More
+                Daha Fazla Göster
               </Button>
             </Link>
           </div>
@@ -165,7 +165,7 @@ const SearchBar = ({
               })}
 
             {!isLoading && searchResults && searchResults.length === 0 && (
-              <p className="text-sm text-gray-400 py-3 text-center">No anime found</p>
+              <p className="text-sm text-gray-400 py-3 text-center">Anime bulunamadı</p>
             )}
 
             {searchResults?.slice(0, 5).map((anime) => (
@@ -199,7 +199,7 @@ const SearchBar = ({
               onClick={handleAnimeClick}
             >
               <Button size="sm" className="w-full bg-[#e9376b] text-white">
-                Show More
+                Daha Fazla Göster
               </Button>
             </Link>
           </div>

@@ -85,27 +85,27 @@ const Layout = (props: Props) => {
 
   const SelectOptions: ISelectOptions[] = [
     {
-      label: "Watching",
+      label: "İzleniyor",
       value: "watching",
       icon: TvMinimalPlay,
     },
     {
-      label: "Plan to watch",
+      label: "Planlandı",
       value: "plan to watch",
       icon: BookmarkCheck,
     },
     {
-      label: "On Hold",
+      label: "Beklemede",
       value: "on hold",
       icon: Hand,
     },
     {
-      label: "Completed",
+      label: "Tamamlandı",
       value: "completed",
       icon: CheckCheck,
     },
     {
-      label: "Dropped",
+      label: "Bırakıldı",
       value: "dropped",
       icon: Ban,
     },
@@ -126,7 +126,9 @@ const Layout = (props: Props) => {
     } catch (error) {
       console.log(error);
       setSelected(previousSelected);
-      toast.error("Error adding to list", { style: { background: "red" } });
+      toast.error("Listeye eklenirken hata oluştu", {
+        style: { background: "red" },
+      });
     }
   };
 
@@ -190,7 +192,7 @@ const Layout = (props: Props) => {
           />
           <div className="flex flex-col gap-2">
             <Select
-              placeholder="Add to list"
+              placeholder="Listeme Ekle"
               value={selected || normalizeStatus(bookmarks?.[0]?.status)}
               options={SelectOptions}
               onChange={handleSelect}
@@ -210,11 +212,11 @@ const Layout = (props: Props) => {
         />
 
         <AnimeCarousel
-          title={"Also Watch"}
+          title={"Bunları da İzle"}
           anime={anime?.relatedAnimes as IAnime[]}
         />
         <AnimeCarousel
-          title={"Recommended"}
+          title={"Önerilenler"}
           anime={anime?.recommendedAnimes as IAnime[]}
         />
       </Container>

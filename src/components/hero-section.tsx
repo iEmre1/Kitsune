@@ -67,7 +67,7 @@ const HeroCarouselItem = ({ anime }: { anime: MediaList }) => {
     anime.coverImage?.large ||
     "";
   const title =
-    anime.title?.english || anime.title?.romaji || anime.title?.native || "Untitled";
+    anime.title?.english || anime.title?.romaji || anime.title?.native || "Başlıksız";
 
   return (
     <div
@@ -99,7 +99,7 @@ const HeroCarouselItem = ({ anime }: { anime: MediaList }) => {
               )}
               {!!anime.averageScore && (
                 <Badge variant="secondary" className="bg-yellow-500/20 text-yellow-300 border border-yellow-500/40">
-                  ⭐ {anime.averageScore}% Score
+                  ⭐ {anime.averageScore}% Puan
                 </Badge>
               )}
               {anime.genres?.slice(0, 3).map((g) => (
@@ -114,7 +114,7 @@ const HeroCarouselItem = ({ anime }: { anime: MediaList }) => {
                 href={`${ROUTES.ANIME_DETAILS}/${anime.id}`}
                 className="h-10 text-md bg-[#e9376b] text-white hover:bg-[#e9376b]"
               >
-                Learn More
+                Daha Fazla Bilgi
               </ButtonLink>
             </div>
           </div>

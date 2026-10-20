@@ -6,6 +6,7 @@ import { MessageSquare, Play, AlertTriangle, EyeOff } from "lucide-react";
 import { useGetRecentComments } from "@/hooks/use-comments";
 import Avatar from "@/components/common/avatar";
 import { formatDistanceToNow } from "date-fns";
+import { tr } from "date-fns/locale";
 import Container from "@/components/container";
 
 const RecentCommentsSection = () => {
@@ -22,7 +23,7 @@ const RecentCommentsSection = () => {
         <div className="flex items-center gap-2">
           <MessageSquare className="h-5 w-5 text-[#e9376b]" />
           <h2 className="text-xl md:text-2xl font-bold text-white tracking-wide">
-            Latest Activities
+            Son Aktiviteler
           </h2>
         </div>
       </div>
@@ -39,7 +40,7 @@ const RecentCommentsSection = () => {
       ) : !comments || comments.length === 0 ? (
         <div className="flex flex-col items-center justify-center p-8 bg-[#0f172a]/40 rounded-xl border border-slate-800 text-center">
           <MessageSquare className="h-8 w-8 text-slate-600 mb-2" />
-          <p className="text-sm font-medium text-gray-400">No recent comments yet.</p>
+          <p className="text-sm font-medium text-gray-400">Henüz son yorum yapılmamış.</p>
         </div>
       ) : (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -73,10 +74,10 @@ const RecentCommentsSection = () => {
                     )}
                     <div className="flex flex-col min-w-0">
                       <span className="text-xs font-bold text-white truncate">
-                        {user?.username || "Anonymous"}
+                        {user?.username || "Anonim"}
                       </span>
                       <span className="text-[10px] text-gray-500">
-                        {formatDistanceToNow(createdDate, { addSuffix: true })}
+                        {formatDistanceToNow(createdDate, { addSuffix: true, locale: tr })}
                       </span>
                     </div>
                   </div>
@@ -90,7 +91,7 @@ const RecentCommentsSection = () => {
                       {comment.animeTitle || "Anime"}
                     </span>
                     <span className="text-[10px] font-bold bg-[#e9376b] text-white px-2 py-0.5 rounded shrink-0">
-                      Ep {comment.episodeNumber}
+                      Bölüm {comment.episodeNumber}
                     </span>
                   </div>
 
@@ -101,7 +102,7 @@ const RecentCommentsSection = () => {
                       className="flex items-center justify-center gap-1.5 p-2 bg-yellow-950/40 border border-yellow-800/40 text-yellow-300/90 rounded-lg text-xs hover:bg-yellow-900/50 transition w-full"
                     >
                       <AlertTriangle className="h-3 w-3 text-yellow-400" />{" "}
-                      Spoiler — Click to view
+                      Spoiler — Görmek için tıkla
                     </button>
                   ) : (
                     <div className="relative">
@@ -113,7 +114,7 @@ const RecentCommentsSection = () => {
                           onClick={() => toggleReveal(comment.id)}
                           className="text-[10px] text-yellow-500/80 hover:text-yellow-400 flex items-center gap-1 mt-1 font-semibold"
                         >
-                          <EyeOff className="h-3 w-3" /> Hide Spoiler
+                          <EyeOff className="h-3 w-3" /> Spoiler'ı Gizle
                         </button>
                       )}
                     </div>
@@ -125,8 +126,8 @@ const RecentCommentsSection = () => {
                   href={`/anime/watch?anime=${comment.animeId}&ep=${comment.episodeNumber}`}
                   className="flex items-center justify-center gap-1.5 mt-3 pt-2.5 border-t border-slate-800/80 text-xs font-bold text-gray-400 group-hover:text-[#e9376b] transition"
                 >
-                  <Play className="h-3 w-3 fill-current" /> Watch Episode{" "}
-                  {comment.episodeNumber}
+                  <Play className="h-3 w-3 fill-current" />{" "}
+                  {comment.episodeNumber}. Bölümü İzle
                 </Link>
               </div>
             );

@@ -89,14 +89,14 @@ const AnimeEpisodes = ({ animeId }: Props) => {
   return (
     <>
       <div className="flex w-full items-center justify-between">
-        <h3 className="text-xl font-semibold">Episodes</h3>
+        <h3 className="text-xl font-semibold">Bölümler</h3>
         <div className="flex items-center gap-2">
           {ranges.length > 0 && (
             <Select onValueChange={handleRangeChange} value={selectedRange}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue
                   className="text-white"
-                  placeholder="Select Range"
+                  placeholder="Aralık Seç"
                 />
               </SelectTrigger>
               <SelectContent>
@@ -113,7 +113,7 @@ const AnimeEpisodes = ({ animeId }: Props) => {
           <div className="relative max-w-[21.875rem] ">
             <Search className="absolute inset-y-0 left-2 m-auto h-4 w-4" />
             <Input
-              placeholder="Search for episode..."
+              placeholder="Bölüm ara..."
               className=" w-full pl-8 text-white border-white"
               onChange={handleSearch}
             />
@@ -131,7 +131,7 @@ const AnimeEpisodes = ({ animeId }: Props) => {
         ))}
         {!episodes.length && !isLoading && (
           <div className="lg:col-span-5 col-span-2 sm:col-span-3 md:col-span-4 xl:col-span-6 2xl:col-span-7 flex items-center justify-center py-10 bg-slate-900 rounded-md">
-            No Episodes
+            Bölüm bulunamadı
           </div>
         )}
         {isLoading &&

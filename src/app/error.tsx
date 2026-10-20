@@ -29,11 +29,11 @@ export default function Error({
           height={300}
           className=""
         />
-        <p className="font-bold text-2xl">Something went wrong!</p>
+        <p className="font-bold text-2xl">Bir şeyler ters gitti!</p>
         <div className="flex gap-3 items-center">
-          <ButtonLink href={ROUTES.HOME}>Back to Home</ButtonLink>
+          <ButtonLink href={ROUTES.HOME}>Ana Sayfaya Dön</ButtonLink>
           <Button onClick={() => reset()} className="" variant={"secondary"}>
-            Reload
+            Yeniden Yükle
           </Button>
         </div>
       </div>

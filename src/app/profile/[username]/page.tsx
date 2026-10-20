@@ -77,12 +77,12 @@ function ProfilePage() {
 
         if (res) {
           setAuth({ ...auth, avatar: res.avatar });
-          toast.success("Avatar updated successfully", {
+          toast.success("Avatar başarıyla güncellendi", {
             style: { background: "green" },
           });
         }
       } catch (err: any) {
-        toast.error(err?.message || "Failed to update avatar", {
+        toast.error(err?.message || "Avatar güncellenemedi", {
           style: { background: "red" },
         });
       }
@@ -97,9 +97,9 @@ function ProfilePage() {
     return (
       <Container className="min-h-[70vh] mt-24 flex flex-col items-center justify-center text-center">
         <UserX className="h-16 w-16 text-slate-600 mb-4" />
-        <h2 className="text-2xl font-bold text-white mb-2">User Not Found</h2>
+        <h2 className="text-2xl font-bold text-white mb-2">Kullanıcı Bulunamadı</h2>
         <p className="text-sm text-gray-400 mb-6">
-          The user profile &quot;@{username}&quot; does not exist or has been removed.
+          &quot;@{username}&quot; profili mevcut değil veya kaldırılmış.
         </p>
       </Container>
     );
@@ -110,7 +110,7 @@ function ProfilePage() {
       <div className="w-full h-48 md:h-64 lg:h-72 relative">
         <Image
           src={CoverImage.src}
-          alt="cover"
+          alt="kapak"
           fill
           className="object-cover"
           priority
@@ -143,7 +143,7 @@ function ProfilePage() {
                 className="absolute inset-0 bg-black/60 backdrop-blur-xs opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center cursor-pointer text-white p-2 text-center select-none"
               >
                 <Camera className="h-7 w-7 text-white mb-1 drop-shadow-md animate-bounce" />
-                <span className="text-xs font-bold tracking-wide">Change Avatar</span>
+                <span className="text-xs font-bold tracking-wide">Avatarı Değiştir</span>
               </div>
             )}
           </div>
@@ -162,7 +162,7 @@ function ProfilePage() {
             <h2 className="text-xl font-bold text-white">@{targetUser.username}</h2>
             {isOwner && (
               <span className="text-[11px] font-semibold text-[#e9376b] bg-[#e9376b]/10 px-2.5 py-0.5 rounded-full border border-[#e9376b]/20 mt-1">
-                Your Profile
+                Profiliniz
               </span>
             )}
           </div>
@@ -173,18 +173,18 @@ function ProfilePage() {
           <div className="w-full">
             {isOwner && (
               <div className="float-right flex gap-2 items-center mb-2">
-                <p className="text-sm text-gray-500">Import:</p>
+                <p className="text-sm text-gray-500">İçe Aktar:</p>
                 <AnilistImport />
               </div>
             )}
 
             <Tabs defaultValue="watching" className="w-full">
               <TabsList className="grid w-full grid-cols-1 sm:grid-cols-5">
-                <TabsTrigger value="watching">Watching</TabsTrigger>
-                <TabsTrigger value="plan-to-watch">Plan To Watch</TabsTrigger>
-                <TabsTrigger value="on-hold">On Hold</TabsTrigger>
-                <TabsTrigger value="completed">Completed</TabsTrigger>
-                <TabsTrigger value="dropped">Dropped</TabsTrigger>
+                <TabsTrigger value="watching">İzleniyor</TabsTrigger>
+                <TabsTrigger value="plan-to-watch">Planlandı</TabsTrigger>
+                <TabsTrigger value="on-hold">Beklemede</TabsTrigger>
+                <TabsTrigger value="completed">Tamamlandı</TabsTrigger>
+                <TabsTrigger value="dropped">Bırakıldı</TabsTrigger>
               </TabsList>
 
               <TabsContent value="watching" className="mt-4">

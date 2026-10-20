@@ -27,7 +27,7 @@ function NavbarAvatar({ auth }: Props) {
         <PopoverContent className="z-[110] bg-slate-950/75 backdrop-blur-xl backdrop-saturate-150 border border-white/10 shadow-[0_8px_32px_0_rgba(0,0,0,0.45)] rounded-xl w-[200px] mt-4 mr-4 text-sm flex flex-col space-y-2">
           <div className="mb-2">
             <p>
-              Hello, <span className="text-red-500">@{auth.auth.username}</span>
+              Merhaba, <span className="text-red-500">@{auth.auth.username}</span>
             </p>
           </div>
           <div className="border-b border-gray-600 pb-2">
@@ -37,7 +37,7 @@ function NavbarAvatar({ auth }: Props) {
               onClick={() => setOpen(false)}
             >
               <User size="20" />
-              <p>Profile</p>
+              <p>Profil</p>
             </Link>
           </div>
 
@@ -49,7 +49,7 @@ function NavbarAvatar({ auth }: Props) {
             }}
           >
             <LogOut size="20" />
-            <p>Logout</p>
+            <p>Çıkış Yap</p>
           </div>
         </PopoverContent>
       </Popover>

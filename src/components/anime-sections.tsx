@@ -35,7 +35,7 @@ const AnimeSections = ({
       <div className="grid lg:grid-cols-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7 w-full gap-5 content-center">
         {animeList.map((anime, idx) => {
           const title =
-            anime.title?.english || anime.title?.romaji || anime.title?.native || "Untitled";
+            anime.title?.english || anime.title?.romaji || anime.title?.native || "Başlıksız";
           const poster =
             anime.coverImage?.extraLarge || anime.coverImage?.large || "";
 

@@ -13,7 +13,7 @@ const getAnimeSchedule = async (date?: string): Promise<IAnimeSchedule> => {
   const scheduledAnimes = items.map((item) => {
     const hours = Math.floor((item.timeUntilAiring || 0) / 3600);
     const minutes = Math.floor(((item.timeUntilAiring || 0) % 3600) / 60);
-    const timeString = item.timeUntilAiring > 0 ? `in ${hours}h ${minutes}m` : "Airing soon";
+    const timeString = item.timeUntilAiring > 0 ? `${hours} saat ${minutes} dk içinde` : "Yakında yayınlanacak";
 
     return {
       id: String(item.id),

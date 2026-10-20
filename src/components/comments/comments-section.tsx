@@ -7,6 +7,7 @@ import { useGetInfiniteComments, useAddComment } from "@/hooks/use-comments";
 import Avatar from "@/components/common/avatar";
 import { Button } from "@/components/ui/button";
 import { formatDistanceToNow } from "date-fns";
+import { tr } from "date-fns/locale";
 import LoginPopoverButton from "@/components/login-popover-button";
 
 type Props = {
@@ -75,7 +76,7 @@ const CommentsSection = ({ animeId, animeTitle, episodeNumber }: Props) => {
         <div className="flex items-center gap-3">
           <MessageSquare className="h-5 w-5 text-[#e9376b]" />
           <h3 className="text-lg md:text-xl font-bold text-white group-hover:text-[#e9376b] transition">
-            Episode Comments
+            Bölüm Yorumları
           </h3>
           <span className="text-xs font-bold bg-[#e9376b]/20 text-[#e9376b] px-2.5 py-0.5 rounded-full border border-[#e9376b]/30">
             {totalComments}
@@ -100,7 +101,7 @@ const CommentsSection = ({ animeId, animeTitle, episodeNumber }: Props) => {
               <textarea
                 value={content}
                 onChange={(e) => setContent(e.target.value)}
-                placeholder="Share your thoughts about this episode..."
+                placeholder="Bu bölüm hakkındaki düşüncelerini paylaş..."
                 rows={3}
                 className="w-full bg-slate-900/90 text-white placeholder-gray-500 rounded-lg p-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#e9376b] border border-slate-800 transition resize-none"
               />
@@ -115,7 +116,7 @@ const CommentsSection = ({ animeId, animeTitle, episodeNumber }: Props) => {
                     className="h-4 w-4 rounded bg-slate-900 border-slate-700 text-[#e9376b] focus:ring-0 focus:ring-offset-0 cursor-pointer accent-[#e9376b]"
                   />
                   <span className="flex items-center gap-1">
-                    <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" /> Contains Spoilers
+                    <AlertTriangle className="h-3.5 w-3.5 text-yellow-500" /> Spoiler İçerir
                   </span>
                 </label>
 
@@ -125,13 +126,13 @@ const CommentsSection = ({ animeId, animeTitle, episodeNumber }: Props) => {
                   className="bg-[#e9376b] hover:bg-[#e9376b]/90 text-white text-xs font-bold px-4 h-8 rounded-lg flex items-center gap-1.5 transition disabled:opacity-50"
                 >
                   <Send className="h-3.5 w-3.5" />
-                  {addCommentMutation.isPending ? "Posting..." : "Post Comment"}
+                  {addCommentMutation.isPending ? "Gönderiliyor..." : "Yorum Gönder"}
                 </Button>
               </div>
             </form>
           ) : (
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 p-4 bg-[#0f172a] rounded-xl border border-slate-800 text-sm">
-              <p className="text-gray-400 text-xs sm:text-sm">Join the discussion! Log in to share comments with the community.</p>
+              <p className="text-gray-400 text-xs sm:text-sm">Tartışmaya katıl! Yorumlarını toplulukla paylaşmak için giriş yap.</p>
               <LoginPopoverButton />
             </div>
           )}
@@ -174,10 +175,10 @@ const CommentsSection = ({ animeId, animeTitle, episodeNumber }: Props) => {
                     <div className="flex flex-col gap-1 flex-1 min-w-0">
                       <div className="flex items-center justify-between gap-2">
                         <span className="text-sm font-bold text-white">
-                          {user?.username || "Anonymous"}
+                          {user?.username || "Anonim"}
                         </span>
                         <span className="text-[11px] text-gray-500">
-                          {formatDistanceToNow(createdDate, { addSuffix: true })}
+                          {formatDistanceToNow(createdDate, { addSuffix: true, locale: tr })}
                         </span>
                       </div>
 
@@ -187,7 +188,7 @@ const CommentsSection = ({ animeId, animeTitle, episodeNumber }: Props) => {
                           onClick={() => toggleSpoiler(comment.id)}
                           className="flex items-center gap-2 p-2.5 mt-1 bg-yellow-950/30 border border-yellow-800/40 text-yellow-300/90 rounded-lg text-xs hover:bg-yellow-900/40 transition w-fit"
                         >
-                          <Eye className="h-3.5 w-3.5" /> Contains Spoilers — Click to View
+                          <Eye className="h-3.5 w-3.5" /> Spoiler İçerir — Görmek İçin Tıkla
                         </button>
                       ) : (
                         <div className="relative">
@@ -199,7 +200,7 @@ const CommentsSection = ({ animeId, animeTitle, episodeNumber }: Props) => {
                               onClick={() => toggleSpoiler(comment.id)}
                               className="text-[10px] text-yellow-500/80 hover:text-yellow-400 flex items-center gap-1 mt-1 font-semibold"
                             >
-                              <EyeOff className="h-3 w-3" /> Hide Spoiler
+                              <EyeOff className="h-3 w-3" /> Spoiler'ı Gizle
                             </button>
                           )}
                         </div>
@@ -221,10 +222,10 @@ const CommentsSection = ({ animeId, animeTitle, episodeNumber }: Props) => {
                   >
                     {isFetchingNextPage ? (
                       <>
-                        <Loader2 className="h-4 w-4 animate-spin text-[#e9376b]" /> Loading...
+                        <Loader2 className="h-4 w-4 animate-spin text-[#e9376b]" /> Yükleniyor...
                       </>
                     ) : (
-                      "Load More Comments"
+                      "Daha Fazla Yorum Yükle"
                     )}
                   </Button>
                 </div>
@@ -233,8 +234,8 @@ const CommentsSection = ({ animeId, animeTitle, episodeNumber }: Props) => {
           ) : (
             <div className="flex flex-col items-center justify-center p-8 bg-[#0f172a]/40 rounded-xl border border-slate-800 text-center">
               <MessageSquare className="h-8 w-8 text-slate-600 mb-2" />
-              <p className="text-sm font-medium text-gray-400">No comments yet for Episode {episodeNumber}.</p>
-              <p className="text-xs text-gray-500 mt-1">Be the first to start the conversation!</p>
+              <p className="text-sm font-medium text-gray-400">Henüz {episodeNumber}. bölüm için yorum yapılmamış.</p>
+              <p className="text-xs text-gray-500 mt-1">Sohbeti başlatan ilk sen ol!</p>
             </div>
           )}
         </div>

@@ -174,20 +174,20 @@ const ActivityProgression = ({ targetUser }: Props) => {
     if (!val?.date) {
       return {
         "data-tooltip-id": "activity-heatmap-tooltip",
-        "data-tooltip-content": "No watch activity",
+        "data-tooltip-content": "İzleme etkinliği yok",
       };
     }
-    const fDate = new Date(val.date).toLocaleDateString("en-US", {
+    const fDate = new Date(val.date).toLocaleDateString("tr-TR", {
       month: "short",
       day: "numeric",
     });
     return {
       "data-tooltip-id": "activity-heatmap-tooltip",
-      "data-tooltip-content": `Watched ${val.count} episodes on ${fDate}`,
+      "data-tooltip-content": `${fDate} tarihinde ${val.count} bölüm izlendi`,
     } as Record<string, string>;
   };
 
-  const formattedJoinedDate = userCreatedDate.toLocaleDateString("en-US", {
+  const formattedJoinedDate = userCreatedDate.toLocaleDateString("tr-TR", {
     month: "long",
     year: "numeric",
   });
@@ -201,10 +201,10 @@ const ActivityProgression = ({ targetUser }: Props) => {
             <div>
               <h3 className="text-lg font-bold text-white flex items-center gap-2">
                 <Tv className="h-5 w-5 text-[#e9376b]" />
-                Watched {totalEpisodesCount} episodes in {selectedYear}
+                {selectedYear} yılında {totalEpisodesCount} bölüm izlendi
               </h3>
               <p className="text-xs text-gray-400 mt-1">
-                Click any cell on the contribution graph to filter activity for that specific day.
+                O güne ait etkinlikleri filtrelemek için katkı grafiğindeki herhangi bir hücreye tıklayın.
               </p>
             </div>
 
@@ -213,7 +213,7 @@ const ActivityProgression = ({ targetUser }: Props) => {
                 onClick={() => setSelectedDate(null)}
                 className="flex items-center gap-1.5 px-3 py-1 bg-slate-800 text-xs font-semibold text-gray-300 rounded-lg hover:bg-slate-700 transition"
               >
-                Showing {new Date(selectedDate).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
+                Gösterilen: {new Date(selectedDate).toLocaleDateString("tr-TR", { month: "short", day: "numeric", year: "numeric" })}
                 <X className="h-3.5 w-3.5 text-red-400" />
               </button>
             )}
@@ -225,7 +225,7 @@ const ActivityProgression = ({ targetUser }: Props) => {
           ) : (
             <div className="mb-8 overflow-x-auto pb-2">
               <CalendarHeatmap
-                weekdayLabels={["", "M", "", "W", "", "F", ""]}
+                weekdayLabels={["", "P", "", "Ç", "", "C", ""]}
                 showWeekdayLabels={true}
                 showOutOfRangeDays={true}
                 startDate={startDate}
@@ -250,8 +250,8 @@ const ActivityProgression = ({ targetUser }: Props) => {
             <h4 className="text-sm font-bold text-gray-300 uppercase tracking-wider mb-4 flex items-center gap-2">
               <Clock className="h-4 w-4 text-[#e9376b]" />
               {selectedDate
-                ? `Activity on ${new Date(selectedDate).toLocaleDateString("en-US", { month: "long", day: "numeric", year: "numeric" })}`
-                : `${selectedYear} Activity Activity Timeline`}
+                ? `${new Date(selectedDate).toLocaleDateString("tr-TR", { month: "long", day: "numeric", year: "numeric" })} Tarihindeki Etkinlik`
+                : `${selectedYear} Etkinlik Zaman Çizelgesi`}
             </h4>
 
             {/* Activity List */}
@@ -265,12 +265,12 @@ const ActivityProgression = ({ targetUser }: Props) => {
               <div className="flex flex-col gap-3">
                 {filteredActivities.slice(0, 15).map((act) => {
                   const dateObj = new Date(act.created);
-                  const timeFormatted = dateObj.toLocaleTimeString("en-US", {
+                  const timeFormatted = dateObj.toLocaleTimeString("tr-TR", {
                     hour: "numeric",
                     minute: "2-digit",
                     hour12: true,
                   });
-                  const dateFormatted = dateObj.toLocaleDateString("en-US", {
+                  const dateFormatted = dateObj.toLocaleDateString("tr-TR", {
                     month: "short",
                     day: "numeric",
                   });
@@ -295,11 +295,11 @@ const ActivityProgression = ({ targetUser }: Props) => {
                         )}
                         <div className="flex flex-col min-w-0">
                           <span className="text-sm font-bold text-white truncate group-hover:text-[#e9376b] transition">
-                            Watched Episode {act.episodeNumber} of {act.animeTitle}
+                            {act.animeTitle} · {act.episodeNumber}. bölüm izlendi
                           </span>
                           <span className="text-xs text-gray-400 mt-0.5 flex items-center gap-1.5">
                             <Calendar className="h-3 w-3 text-slate-500" />
-                            {dateFormatted} at {timeFormatted}
+                            {dateFormatted} · {timeFormatted}
                           </span>
                         </div>
                       </div>
@@ -308,7 +308,7 @@ const ActivityProgression = ({ targetUser }: Props) => {
                         href={`/anime/watch?anime=${act.animeId}&ep=${act.episodeNumber}`}
                         className="flex items-center gap-1 text-xs font-bold text-gray-400 group-hover:text-[#e9376b] transition shrink-0 pl-3"
                       >
-                        Watch <ChevronRight className="h-4 w-4" />
+                        İzle <ChevronRight className="h-4 w-4" />
                       </Link>
                     </div>
                   );
@@ -316,7 +316,7 @@ const ActivityProgression = ({ targetUser }: Props) => {
               </div>
             ) : (
               <div className="p-6 text-center text-xs text-gray-500 bg-slate-900/40 rounded-xl border border-slate-800">
-                No activity recorded for this period.
+                Bu dönem için kayıtlı etkinlik bulunmuyor.
               </div>
             )}
           </div>
@@ -326,7 +326,7 @@ const ActivityProgression = ({ targetUser }: Props) => {
         <div className="flex flex-col gap-4 w-full lg:w-64 shrink-0">
           <div className="flex flex-col bg-[#0f172a]/60 p-3 rounded-2xl border border-slate-800 shadow-md">
             <span className="text-xs font-bold text-gray-400 uppercase tracking-wider px-3 py-2">
-              Select Year
+              Yıl Seçin
             </span>
             <div className="flex flex-col gap-1 mt-1">
               {availableYears.map((year) => {
@@ -359,10 +359,10 @@ const ActivityProgression = ({ targetUser }: Props) => {
             </div>
             <div className="flex flex-col">
               <span className="text-xs font-bold text-purple-300 uppercase tracking-wider">
-                Joined Kitsune
+                Animke Katılımı
               </span>
               <span className="text-xs text-gray-300 font-semibold mt-0.5">
-                First joined in {formattedJoinedDate}
+                İlk katılım: {formattedJoinedDate}
               </span>
             </div>
           </div>

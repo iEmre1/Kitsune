@@ -66,7 +66,7 @@ const NavBar = () => {
           console.error("Auth refresh error:", e);
           localStorage.removeItem("pocketbase_auth");
           auth.clearAuth();
-          toast.error("Login session expired.", {
+          toast.error("Giriş oturumu sona erdi.", {
             style: { background: "red" },
           });
         }
@@ -97,7 +97,7 @@ const NavBar = () => {
               "text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-pink-600 tracking-widest",
             ])}
           >
-            Kitsunee
+            Animke
           </h1>
         </Link>
 

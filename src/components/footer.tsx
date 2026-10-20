@@ -15,10 +15,10 @@ const Footer = () => {
         </a>
       </div>
       <p className="text-sm text-gray-300">
-        Kitsune does not store any files on the server, we only link to the
-        media which is hosted on 3rd party services.
+        Animke sunucuda herhangi bir dosya depolamaz; yalnızca üçüncü taraf
+        servislerde barındırılan medyalara bağlantı verir.
       </p>
-      <p className="text-sm text-gray-300">&copy; Kitsune</p>
+      <p className="text-sm text-gray-300">&copy; Animke</p>
     </footer>
   );
 };

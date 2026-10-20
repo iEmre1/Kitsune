@@ -28,7 +28,7 @@ function LoginPopoverButton() {
   const loginWithEmail = async () => {
     try {
       if (formData.username === "" || formData.password === "") {
-        toast.error("Please fill in all fields", {
+        toast.error("Lütfen tüm alanları doldurun", {
           style: { background: "red" },
         });
         return;
@@ -39,7 +39,7 @@ function LoginPopoverButton() {
         .authWithPassword(formData.username, formData.password);
 
       if (pb.authStore.isValid && pb.authStore.record) {
-        toast.success("Login successful", { style: { background: "green" } });
+        toast.success("Giriş başarılı", { style: { background: "green" } });
         clearForm();
         auth.setAuth({
           id: pb.authStore.record.id,
@@ -54,7 +54,7 @@ function LoginPopoverButton() {
       }
     } catch (e) {
       console.error("Login error:", e);
-      toast.error("Invalid username or password", {
+      toast.error("Geçersiz kullanıcı adı veya şifre", {
         style: { background: "red" },
       });
     }
@@ -67,7 +67,7 @@ function LoginPopoverButton() {
       formData.email === "" ||
       formData.confirm_password === ""
     ) {
-      toast.error("Please fill in all fields", {
+      toast.error("Lütfen tüm alanları doldurun", {
         style: { background: "red" },
       });
       return;
@@ -82,7 +82,7 @@ function LoginPopoverButton() {
       });
 
       if (user) {
-        toast.success("Account created successfully. Please login.", {
+        toast.success("Hesap başarıyla oluşturuldu. Lütfen giriş yapın.", {
           style: { background: "green" },
         });
         clearForm();
@@ -96,7 +96,7 @@ function LoginPopoverButton() {
           });
         }
       } else {
-        toast.error("Signup failed. Please try again.", {
+        toast.error("Kayıt başarısız oldu. Lütfen tekrar deneyin.", {
           style: { background: "red" },
         });
       }
@@ -122,7 +122,7 @@ function LoginPopoverButton() {
         username: res.meta?.username,
       });
 
-      toast.success("Login successful", { style: { background: "green" } });
+      toast.success("Giriş başarılı", { style: { background: "green" } });
       auth.setAuth({
         id: pb.authStore.record.id,
         email: pb.authStore.record.email,
@@ -143,7 +143,7 @@ function LoginPopoverButton() {
           variant="outline"
           className="bg-white text-md text-black hover:bg-gray-200 hover:text-black transition-all duration-300"
         >
-          Login
+          Giriş Yap
         </Button>
       </PopoverTrigger>
       <PopoverContent
@@ -157,15 +157,15 @@ function LoginPopoverButton() {
         >
           <TabsList>
             <TabsTrigger onClick={clearForm} value="login">
-              Login
+              Giriş Yap
             </TabsTrigger>
             <TabsTrigger onClick={clearForm} value="signup">
-              Signup
+              Kayıt Ol
             </TabsTrigger>
           </TabsList>
           <TabsContent value="login" className="flex flex-col gap-2">
             <div className="mt-2">
-              <p className="text-gray-300 text-xs">Email or Username:</p>
+              <p className="text-gray-300 text-xs">E-posta veya Kullanıcı Adı:</p>
               <Input
                 required
                 onChange={(e) =>
@@ -173,11 +173,11 @@ function LoginPopoverButton() {
                 }
                 type="text"
                 value={formData.username}
-                placeholder="Enter your email/username"
+                placeholder="E-posta/kullanıcı adınızı girin"
               />
             </div>
             <div>
-              <p className="text-gray-300 text-xs">Password:</p>
+              <p className="text-gray-300 text-xs">Şifre:</p>
               <Input
                 required
                 type="password"
@@ -185,7 +185,7 @@ function LoginPopoverButton() {
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
-                placeholder="Enter your password"
+                placeholder="Şifrenizi girin"
               />
             </div>
             <Button
@@ -195,7 +195,7 @@ function LoginPopoverButton() {
               type="submit"
               onClick={loginWithEmail}
             >
-              Login
+              Giriş Yap
             </Button>
             <hr className="text-white text-xs text-center" />
             <Button
@@ -205,52 +205,52 @@ function LoginPopoverButton() {
               onClick={loginWithDiscord}
             >
               <DiscordIcon className="mr-2" />
-              Login with Discord
+              Discord ile Giriş Yap
             </Button>
           </TabsContent>
           <TabsContent value="signup" className="flex flex-col gap-2">
             <div>
-              <p className="text-gray-300 text-xs">Username:</p>
+              <p className="text-gray-300 text-xs">Kullanıcı Adı:</p>
               <Input
                 required
                 onChange={(e) =>
                   setFormData({ ...formData, username: e.target.value })
                 }
                 type="text"
-                placeholder="Enter your username"
+                placeholder="Kullanıcı adınızı girin"
               />
             </div>
             <div>
-              <p className="text-gray-300 text-xs">Email:</p>
+              <p className="text-gray-300 text-xs">E-posta:</p>
               <Input
                 required
                 onChange={(e) =>
                   setFormData({ ...formData, email: e.target.value })
                 }
                 type="email"
-                placeholder="Enter your email"
+                placeholder="E-postanızı girin"
               />
             </div>
             <div>
-              <p className="text-gray-300 text-xs">Password:</p>
+              <p className="text-gray-300 text-xs">Şifre:</p>
               <Input
                 required
                 onChange={(e) =>
                   setFormData({ ...formData, password: e.target.value })
                 }
                 type="password"
-                placeholder="Enter your password"
+                placeholder="Şifrenizi girin"
               />
             </div>
             <div>
-              <p className="text-gray-300 text-xs">Confirm Password:</p>
+              <p className="text-gray-300 text-xs">Şifre Tekrarı:</p>
               <Input
                 required
                 onChange={(e) =>
                   setFormData({ ...formData, confirm_password: e.target.value })
                 }
                 type="password"
-                placeholder="Enter your password again"
+                placeholder="Şifrenizi tekrar girin"
               />
             </div>
             <Button
@@ -260,7 +260,7 @@ function LoginPopoverButton() {
               type="submit"
               onClick={signupWithEmail}
             >
-              Signup
+              Kayıt Ol
             </Button>
             <hr className="text-white text-xs text-center" />
             <Button
@@ -270,7 +270,7 @@ function LoginPopoverButton() {
               onClick={loginWithDiscord}
             >
               <DiscordIcon className="mr-2" />
-              Signup with Discord
+              Discord ile Kayıt Ol
             </Button>
           </TabsContent>
         </Tabs>

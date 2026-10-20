@@ -312,7 +312,7 @@ function KitsunePlayer({
       validSubtitles[0]?.url;
 
     const defaultTrackObj = validSubtitles.find((t) => t.url === defaultTrack);
-    const defaultTrackTitle = defaultTrackObj?.lang || (validSubtitles.length > 0 ? "English" : "Off");
+    const defaultTrackTitle = defaultTrackObj?.lang || (validSubtitles.length > 0 ? "İngilizce" : "Kapalı");
 
     const defaultTrackProxyUrl = defaultTrack
       ? buildStreamProxyUrl({
@@ -324,7 +324,7 @@ function KitsunePlayer({
 
     const trackOptions: any = validSubtitles.map((track) => ({
       default: track.url === defaultTrack,
-      html: track.lang || "Subtitle",
+      html: track.lang || "Altyazı",
       url: track.url,
     }));
 
@@ -357,10 +357,10 @@ function KitsunePlayer({
                 <div style="display: flex; align-items: center; gap: 4px; padding: 0 6px;">
                     <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor"
               stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/></svg>
-                    <span class="art-skip-text">Skip</span>
+                    <span class="art-skip-text">Atla</span>
                 </div>
             `, // Icon + Text (use a class for text if needed)
-      tooltip: "Skip", // Initial tooltip
+      tooltip: "Atla", // Initial tooltip
       style: {
         display: "none", // Start hidden
         cursor: "pointer",
@@ -451,7 +451,7 @@ function KitsunePlayer({
             videoElement.src = url; // Fallback for Safari native HLS
           } else {
             artPlayerInstance.notice.show =
-              "HLS playback is not supported on your browser.";
+              "Tarayıcınızda HLS oynatma desteklenmiyor.";
           }
         },
       },
@@ -462,16 +462,16 @@ function KitsunePlayer({
             control: true,
             setting: true,
             getName: (level: { height?: number; bitrate?: number }) =>
-              level.height ? `${level.height}P` : "Auto", // Type level
-            title: "Quality",
-            auto: "Auto",
+              level.height ? `${level.height}P` : "Otomatik", // Type level
+            title: "Kalite",
+            auto: "Otomatik",
           },
           audio: {
             control: true,
             setting: true,
-            getName: (track: { name?: string }) => track.name ?? "Unknown", // Type track
-            title: "Audio",
-            auto: "Auto",
+            getName: (track: { name?: string }) => track.name ?? "Bilinmiyor", // Type track
+            title: "Ses",
+            auto: "Otomatik",
           },
         }),
         artplayerPluginAmbilight({
@@ -487,17 +487,17 @@ function KitsunePlayer({
         // Configure settings panel items
         {
           width: 250,
-          html: "Subtitle",
+          html: "Altyazı",
           tooltip: defaultTrackTitle,
           selector: [
             {
-              html: "Display",
-              tooltip: subOrDub === "sub" ? "Hide" : "Show", // Initial state based on prop
+              html: "Görüntüleme",
+              tooltip: subOrDub === "sub" ? "Gizle" : "Göster", // Initial state based on prop
               switch: subOrDub === "sub", // Switch is ON if sub
               onSwitch: function(item) {
                 const showSubtitle = !item.switch; // The new state
                 art.subtitle.show = showSubtitle;
-                item.tooltip = showSubtitle ? "Hide" : "Show";
+                item.tooltip = showSubtitle ? "Gizle" : "Göster";
                 console.log(`Subtitle display set to: ${showSubtitle}`);
                 return showSubtitle; // Return the new switch state
               },
@@ -522,9 +522,9 @@ function KitsunePlayer({
                 escape: false,
                 encoding: "utf-8",
               });
-              return item.html ?? "Subtitle";
+              return item.html ?? "Altyazı";
             }
-            return item.html ?? "Subtitle";
+            return item.html ?? "Altyazı";
           },
         },
       ],
@@ -533,12 +533,12 @@ function KitsunePlayer({
         ...generateHighlights(
           episodeInfo?.intro?.start,
           episodeInfo?.intro?.end,
-          "Intro",
+          "Açılış",
         ),
         ...generateHighlights(
           episodeInfo?.outro?.start,
           episodeInfo?.outro?.end,
-          "Outro",
+          "Kapanış",
         ),
       ],
       poster: animeInfo.image,
@@ -638,10 +638,10 @@ function KitsunePlayer({
             if (manualSkip.style) manualSkip.style.display = "inline-flex";
           }
           // Update text/tooltip
-          const skipText = inIntro ? "Intro" : "Outro";
+          const skipText = inIntro ? "Açılışı Atla" : "Kapanışı Atla";
           const textElement = manualSkip.querySelector(".art-skip-text");
-          if (textElement && textElement.textContent !== `Skip ${skipText}`) {
-            textElement.textContent = `Skip ${skipText}`;
+          if (textElement && textElement.textContent !== skipText) {
+            textElement.textContent = skipText;
           }
         } else {
           // Hide the button
@@ -836,7 +836,7 @@ function KitsunePlayer({
               width="60"
               height="60"
               src={loadingImage.src}
-              alt="Loading..."
+              alt="Yükleniyor..."
             />
           </div>
         )}

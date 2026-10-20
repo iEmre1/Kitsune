@@ -80,7 +80,7 @@ const ContinueWatching = (props: Props) => {
     <Container className="flex flex-col gap-5 py-10 items-center lg:items-start">
       <div className="flex items-center gap-2">
         <History />
-        <h5 className="text-2xl font-bold">Continue Watching</h5>
+        <h5 className="text-2xl font-bold">İzlemeye Devam Et</h5>
       </div>
       <div className="grid lg:grid-cols-5 grid-cols-2 sm:grid-cols-3 md:grid-cols-4 xl:grid-cols-6 2xl:grid-cols-7 w-full gap-5 content-center">
         {anime?.map(

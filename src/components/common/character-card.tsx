@@ -22,7 +22,7 @@ const CharacterCard = ({ ...props }: Props) => {
     >
       <Image
         src={props.character.character.poster}
-        alt="image"
+        alt="görsel"
         height={100}
         width={100}
         className="w-full h-full object-cover"

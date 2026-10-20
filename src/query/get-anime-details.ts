@@ -32,7 +32,7 @@ const getAnimeDetails = async (animeId: string): Promise<IAnimeDetails> => {
     .filter((edge) => edge && edge.node && edge.node.id)
     .map((edge) => ({
       id: String(edge.node.id),
-      name: edge.node.title?.english || edge.node.title?.romaji || "Related Anime",
+      name: edge.node.title?.english || edge.node.title?.romaji || "İlgili Anime",
       title: edge.relationType || "Relation",
       poster: edge.node.coverImage?.large || edge.node.coverImage?.extraLarge || "",
       isCurrent: edge.node.id === media.id,
