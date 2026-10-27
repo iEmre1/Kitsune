@@ -100,7 +100,7 @@ const SearchResults = () => {
 
   const resetFilters = () => {
     setFilters({
-      q: params.q,
+      q: "",
       page: 1,
       type: "",
       status: "",
@@ -110,7 +110,7 @@ const SearchResults = () => {
       sort: "",
       genres: "",
     });
-    router.push(params.q ? `/search?q=${encodeURIComponent(params.q)}` : '/search?q=""');
+    router.push("/search");
   };
 
   return (

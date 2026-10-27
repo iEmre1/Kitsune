@@ -1,6 +1,7 @@
 import crypto from "node:crypto";
 import { wreqFetch } from "../core/wreq.js";
 import { buildTitleSearchQueries, buildTitles, titleIdentityScore } from "../core/new-provider-utils.js";
+import { anilistGraphQL } from "../core/anilist-web.js";
 
 const __name = (fn, _) => fn;
 
@@ -1110,14 +1111,8 @@ __name(findBestMatch, "findBestMatch");
 async function fetchAniListMedia(anilistId) {
   try {
     const q = "query ($id: Int) { Media (id: $id, type: ANIME) { seasonYear startDate { year } title { romaji english native } } }";
-    const res = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json", "User-Agent": UA4, "Origin": "https://anilist.co" },
-      body: JSON.stringify({ query: q, variables: { id: Number(anilistId) } })
-    });
-    if (!res.ok) return null;
-    const json = await res.json();
-    return json.data?.Media ?? null;
+    const json = await anilistGraphQL(q, { id: Number(anilistId) });
+    return json?.data?.Media ?? null;
   } catch {
     return null;
   }
@@ -1355,13 +1350,8 @@ async function fetchAniListFull(anilistId) {
       }
     }
   }`;
-  const res = await fetch("https://graphql.anilist.co", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", "Accept": "application/json", "User-Agent": UA4, "Origin": "https://anilist.co" },
-    body: JSON.stringify({ query: q, variables: { id: Number(anilistId) } })
-  });
-  if (!res.ok) throw new Error("AniList fetch failed");
-  const json = await res.json();
+  const json = await anilistGraphQL(q, { id: Number(anilistId) });
+  if (!json) throw new Error("AniList fetch failed");
   return json.data?.Media;
 }
 __name(fetchAniListFull, "fetchAniListFull");

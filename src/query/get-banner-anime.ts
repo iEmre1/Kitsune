@@ -1,5 +1,7 @@
+"use client";
+
 import { GET_ANIME_BANNER } from "@/constants/query-keys";
-import { api } from "@/lib/api";
+import { anilistClientQuery } from "@/lib/anilist-client";
 import { useQuery } from "@tanstack/react-query";
 
 interface IAnimeBanner {
@@ -9,21 +11,20 @@ interface IAnimeBanner {
   };
 }
 
+const BANNER_QUERY = `
+  query ($id: Int) {
+    Media(id: $id, type: ANIME) {
+      id
+      bannerImage
+    }
+  }
+`;
+
 const getAnimeBanner = async (anilistID: number) => {
-  const res = await api.post("https://graphql.anilist.co", {
-    query: `
-      query ($id: Int) {
-        Media(id: $id, type: ANIME) {
-          id
-          bannerImage
-        }
-      }
-    `,
-    variables: {
-      id: anilistID,
-    },
+  const data = await anilistClientQuery<IAnimeBanner>(BANNER_QUERY, {
+    id: anilistID,
   });
-  return res.data.data as IAnimeBanner;
+  return data;
 };
 
 export const useGetAnimeBanner = (anilistID: number) => {
@@ -31,5 +32,8 @@ export const useGetAnimeBanner = (anilistID: number) => {
     queryFn: () => getAnimeBanner(anilistID),
     queryKey: [GET_ANIME_BANNER, anilistID],
     enabled: !!anilistID,
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 };

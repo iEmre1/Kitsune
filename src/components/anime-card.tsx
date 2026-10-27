@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import Image from "next/image";
 
@@ -6,6 +6,7 @@ import { cn, formatSecondsToMMSS } from "@/lib/utils";
 import { Badge } from "./ui/badge";
 import { WatchHistory } from "@/hooks/use-get-bookmark";
 import { Progress } from "./ui/progress";
+import { fetchAnimeImages } from "@/lib/anilist-client";
 
 type Props = {
   className?: string;
@@ -40,6 +41,39 @@ const AnimeCard = ({
 
   const clampedCurrent = Math.min(safeCurrent, safeTotal);
   const percentage = safeTotal > 0 ? (clampedCurrent / safeTotal) * 100 : 0;
+  const [poster, setPoster] = useState(props.poster);
+  const triedApiImage = useRef(false);
+
+  const loadApiPoster = async () => {
+    if (triedApiImage.current) {
+      setPoster("/icon.png");
+      return;
+    }
+    triedApiImage.current = true;
+
+    const animeId =
+      props.href?.match(/\/anime\/(\d+)(?:[/?#]|$)/)?.[1] ||
+      props.href?.match(/[?&]anime=(\d+)/)?.[1];
+    if (!animeId) {
+      setPoster("/icon.png");
+      return;
+    }
+
+    try {
+      const images = await fetchAnimeImages(Number(animeId));
+      setPoster(images.poster || "/icon.png");
+    } catch {
+      setPoster("/icon.png");
+    }
+  };
+
+  useEffect(() => {
+    setPoster(props.poster || "/icon.png");
+    triedApiImage.current = false;
+    if (!props.poster || props.poster === "/icon.png") {
+      void loadApiPoster();
+    }
+  }, [props.poster]);
 
   return (
     <Link href={props.href as string}>
@@ -54,12 +88,13 @@ const AnimeCard = ({
         ])}
       >
         <Image
-          src={props.poster}
+          src={poster}
           alt={props.title}
           height={100}
           width={100}
           className="w-full h-full object-cover"
           unoptimized
+          onError={() => void loadApiPoster()}
         />
         {displayDetails && (
           <>

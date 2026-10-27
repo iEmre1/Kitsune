@@ -4,7 +4,7 @@ import localFont from "next/font/local";
 
 import NavBar from "@/components/navbar";
 import Footer from "@/components/footer";
-import Script from "next/script";
+import GoogleAnalytics from "@/components/google-analytics";
 import QueryProvider from "@/providers/query-provider";
 
 import { ThemeProvider } from "@/components/theme-provider";
@@ -60,18 +60,6 @@ export default function RootLayout({
   return (
     <html lang="tr" suppressHydrationWarning>
       <head>
-        <Script
-          src="https://www.googletagmanager.com/gtag/js?id=G-X9RZ58XPH1"
-          strategy="afterInteractive"
-        />
-        <Script id="google-analytics" strategy="afterInteractive">
-          {`
-          window.dataLayer = window.dataLayer || [];
-          function gtag(){dataLayer.push(arguments);}
-          gtag('js', new Date());
-
-          gtag('config', 'G-X9RZ58XPH1');`}
-        </Script>
         <link rel="icon" href="/icon.png" type="image/png" sizes="192x192" />
       </head>
       <body
@@ -83,6 +71,7 @@ export default function RootLayout({
           enableSystem
           disableTransitionOnChange
         >
+          <GoogleAnalytics />
           <QueryProvider>
             <NavBar />
             {children}

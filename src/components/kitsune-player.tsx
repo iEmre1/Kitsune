@@ -22,6 +22,7 @@ import { useAuthStore } from "@/store/auth-store";
 import useBookMarks from "@/hooks/use-get-bookmark";
 import { pb } from "@/lib/pocketbase";
 import Image from "next/image";
+import { trackEvent } from "@/lib/analytics";
 
 const WATCH_PROGRESS_UPDATE_INTERVAL = 10000; // Update every 10 seconds
 const WATCH_PROGRESS_MIN_WATCH_TIME = 10; // Min seconds watched to create record
@@ -146,17 +147,18 @@ function KitsunePlayer({
     [ensureBookmarkId, syncWatchProgress],
   );
 
-  // --- Construct Stream URI via active HLS proxy (/api/proxy or local companion) ---
   const firstSource = episodeInfo?.sources?.[0];
+  const isDirectIframe = (firstSource as any)?.type === "iframe" || !!(firstSource as any)?.directIframe;
   const uri = useMemo(() => {
     if (!firstSource?.url) return null;
+    if (isDirectIframe) return firstSource.url;
     return buildStreamProxyUrl({
       url: firstSource.url,
       referer: firstSource.referer || episodeInfo?.headers?.Referer,
       headers: firstSource.headers,
       playlistKey: firstSource.playlist_key,
     });
-  }, [firstSource, episodeInfo]);
+  }, [firstSource, episodeInfo, isDirectIframe]);
 
   const skipTimesRef = useRef<{
     introStart?: number;
@@ -262,6 +264,7 @@ function KitsunePlayer({
 
   // --- Effect for Player Initialization and Cleanup ---
   useEffect(() => {
+    if (isDirectIframe) return;
     // Wait for container ref and valid URI
     if (!artContainerRef.current || !uri) {
       // Clean up previous instances if URI becomes invalid or ref detach
@@ -409,6 +412,12 @@ function KitsunePlayer({
     };
 
     let currentHlsInstanceForCleanup: Hls | null = null;
+    let playbackErrorReported = false;
+    const reportPlaybackError = () => {
+      if (playbackErrorReported) return;
+      playbackErrorReported = true;
+      onError?.();
+    };
 
     // Combine All Options
     const finalOptions: Option = {
@@ -427,12 +436,22 @@ function KitsunePlayer({
               hlsInstanceRef.current.destroy();
             }
             const hls = new Hls();
+            let mediaRecoveryAttempted = false;
             hls.loadSource(url);
             hls.attachMedia(videoElement);
             hls.on(Hls.Events.ERROR, (event, data) => {
               if (data.fatal) {
-                console.error("Fatal HLS error encountered:", data);
-                if (onError) onError();
+                if (
+                  data.type === Hls.ErrorTypes.MEDIA_ERROR &&
+                  !mediaRecoveryAttempted
+                ) {
+                  mediaRecoveryAttempted = true;
+                  hls.recoverMediaError();
+                  return;
+                }
+
+                console.warn("HLS playback failed:", data.details);
+                reportPlaybackError();
               }
             });
             hlsInstanceRef.current = hls; // Store ref
@@ -725,16 +744,24 @@ function KitsunePlayer({
     });
 
     art.on("error", (error, reconnectTime) => {
-      console.error(
-        "ArtPlayer Error:",
-        error,
-        "Reconnect attempt:",
-        reconnectTime,
-      );
-      if (onError) onError();
+      if (hlsInstanceRef.current) return;
+      console.warn("ArtPlayer source failed after reconnect:", reconnectTime);
+      reportPlaybackError();
     });
 
     art.on("video:timeupdate", handleTimeUpdate);
+
+    let videoStartTracked = false;
+    const handleVideoPlay = () => {
+      if (videoStartTracked) return;
+      videoStartTracked = true;
+      trackEvent("video_start", {
+        anime_id: animeInfoRef.current.id,
+        episode_number: serversDataRef.current.episodeNo,
+        provider: firstSource?.server || "unknown",
+      });
+    };
+    art.on("video:play", handleVideoPlay);
 
     const handleInteractionUpdate = () => {
       const art = artInstanceRef.current;
@@ -789,6 +816,7 @@ function KitsunePlayer({
         art.off("video:pause", handleInteractionUpdate);
         art.off("video:seeked", handleInteractionUpdate);
         art.off("video:ended", handleInteractionUpdate);
+        art.off("video:play", handleVideoPlay);
         art.off("video:timeupdate", handleTimeUpdate);
 
         art.pause();
@@ -839,6 +867,19 @@ function KitsunePlayer({
               alt="Yükleniyor..."
             />
           </div>
+        )}
+        {isDirectIframe && uri && (
+          <iframe
+            src={uri}
+            width="100%"
+            height="100%"
+            allowFullScreen
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="origin"
+            scrolling="no"
+            className="w-full h-full border-0"
+            sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-presentation"
+          ></iframe>
         )}
       </div>
     </div>

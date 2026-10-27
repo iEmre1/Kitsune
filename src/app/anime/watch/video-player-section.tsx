@@ -8,44 +8,43 @@ const KitsunePlayer = dynamic(() => import("@/components/kitsune-player"), {
   ssr: false,
 });
 import { useGetEpisodeData } from "@/query/get-episode-data";
-import {
-  Captions,
-  Mic,
-  AlertCircle,
-  Tv,
-  ShieldCheck,
-  Download,
-  ExternalLink,
-} from "lucide-react";
-import { Switch } from "@/components/ui/switch";
+import { Captions, Mic, AlertCircle, Server } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Switch } from "@/components/ui/switch";
 
 import { useGetAllEpisodes } from "@/query/get-all-episodes";
-import useBookMarks from "@/hooks/use-get-bookmark";
 import { useGetSourceAvailable } from "@/query/get-source-available";
-import {
-  COMPANION_DOWNLOAD_URL,
-  COMPANION_UI_URL,
-  detectLocalProxy,
-} from "@/lib/local-proxy";
 
 const VideoPlayerSection = () => {
   const searchParams = useSearchParams();
   const animeIdParam = searchParams.get("anime") || "";
+  const seriesAnimeIdParam = searchParams.get("series") || animeIdParam;
+  const seasonNumberParam = Number(searchParams.get("season")) || undefined;
   const epParam = searchParams.get("ep");
   const episodeIdParam = searchParams.get("episode") || "";
   const { selectedEpisode, setSelectedEpisode, anime } = useAnimeStore();
 
   const { data: isSourceAvailable } = useGetSourceAvailable();
   const { data: allEpisodesData, isLoading: isLoadingEpisodes } =
-    useGetAllEpisodes(animeIdParam);
+    useGetAllEpisodes(animeIdParam, seriesAnimeIdParam, seasonNumberParam);
 
-  const [localProxyActive, setLocalProxyActive] = useState<boolean>(false);
+  const [pbPlayerUrl, setPbPlayerUrl] = useState<string | null>(null);
+  const [pbPlayerNotice, setPbPlayerNotice] = useState<string | null>(null);
+  const [pbFansubs, setPbFansubs] = useState<
+    Array<{
+      id: string;
+      fansubName: string;
+      displayName: string;
+      playerUrl: string;
+      fansubRaw?: string;
+      sources: Array<{ id: string; url: string; label: string }>;
+    }>
+  >([]);
+  const [selectedPbSourceId, setSelectedPbSourceId] = useState<string | null>(null);
 
   useEffect(() => {
-    detectLocalProxy().then(setLocalProxyActive);
   }, []);
 
   // Match episode number from ?ep= parameter if present
@@ -55,12 +54,27 @@ const VideoPlayerSection = () => {
       : null;
 
   // Resolve active episode ID prioritizing selectedEpisode or ?ep= parameter
+  const providerEpisodeIds = React.useMemo(() => {
+    const providers = allEpisodesData?.rawResponse?.providers || {};
+    return new Set(
+      Object.values(providers).flatMap((provider: any) =>
+        [
+          ...(provider?.episodes?.sub || []),
+          ...(provider?.episodes?.dub || []),
+        ].map((episode: any) => String(episode.id)),
+      ),
+    );
+  }, [allEpisodesData?.rawResponse?.providers]);
+
+  const episodeCandidates = [
+    targetEpByNumber?.episodeId,
+    episodeIdParam,
+    selectedEpisode,
+    !epParam && !episodeIdParam ? allEpisodesData?.episodes?.[0]?.episodeId : "",
+  ].filter(Boolean) as string[];
   const activeEpisodeId =
-    selectedEpisode ||
-    targetEpByNumber?.episodeId ||
-    episodeIdParam ||
-    allEpisodesData?.episodes?.[0]?.episodeId ||
-    "";
+    episodeCandidates.find((id) => providerEpisodeIds.has(id)) || "";
+  const isEpisodeInPocketBase = Boolean(activeEpisodeId);
 
   // Sync selectedEpisode in store when ?ep= parameter changes
   useEffect(() => {
@@ -92,20 +106,11 @@ const VideoPlayerSection = () => {
 
   const { data: episodeData, isLoading: isLoadingData } = useGetEpisodeData(
     activeEpisodeId,
-    !useFallback && activeEpisodeId.includes("watch/"),
+    isEpisodeInPocketBase && activeEpisodeId.includes("watch/"),
   );
 
   const [autoSkip, setAutoSkip] = useState<boolean>(true);
   const [preferredCategory, setPreferredCategory] = useState<"sub" | "dub">("sub");
-
-  const { createOrUpdateBookMark, syncWatchProgress } = useBookMarks({
-    animeID: animeIdParam,
-    populate: false,
-  });
-
-  const fallbackBookmarkIdRef = React.useRef<string | null>(null);
-  const fallbackWatchedRecordIdRef = React.useRef<string | null>(null);
-  const lastSyncedTimeRef = React.useRef<number>(0);
 
   useEffect(() => {
     const storedSkip = localStorage.getItem("autoSkip");
@@ -132,7 +137,125 @@ const VideoPlayerSection = () => {
     [rawProviders],
   );
 
-  // Cleanly extract active provider, category, and episode number
+  useEffect(() => {
+    const loadPbPlayer = async () => {
+      const parts = activeEpisodeId.replace(/^\//, "").split("/");
+      const provName = parts[1] || providerNames[0] || "";
+      const epNum =
+        allEpisodesData?.episodes?.find((e) => e.episodeId === activeEpisodeId)
+          ?.number ||
+        Number(parts[4]?.split("-").pop()) ||
+        Number(epParam) ||
+        1;
+      if (!animeIdParam || !epNum) {
+        setPbPlayerUrl(null);
+        setPbPlayerNotice(null);
+        setPbFansubs([]);
+        setSelectedPbSourceId(null);
+        return;
+      }
+      try {
+        const items = Object.values(rawProviders)
+          .flatMap((provider: any) => [
+            ...(provider?.episodes?.sub || []),
+            ...(provider?.episodes?.dub || []),
+          ])
+          .filter((record: any) => Number(record.number) === Number(epNum));
+        if (items.length === 0) {
+          setPbFansubs([]);
+          setSelectedPbSourceId(null);
+          setPbPlayerUrl(null);
+          setPbPlayerNotice(null);
+          return;
+        }
+
+        const fansubs = items
+          .map((rec: any) => {
+            const sources: Array<{ id: string; url: string; label: string }> = [];
+            const p1 = rec.player_url;
+            if (p1 && String(p1).trim() !== "") {
+              sources.push({ id: `${rec.id}-main`, url: String(p1).trim(), label: "Ana Kaynak" });
+            } else {
+              const p1b = rec.player_url1;
+              if (p1b && String(p1b).trim() !== "") {
+                sources.push({ id: `${rec.id}-main`, url: String(p1b).trim(), label: "Ana Kaynak" });
+              }
+            }
+            const p2 = rec.player_url2;
+            if (p2 && String(p2).trim() !== "") {
+              sources.push({ id: `${rec.id}-1`, url: String(p2).trim(), label: "Kaynak 2" });
+            }
+            const p3 = rec.player_url3;
+            if (p3 && String(p3).trim() !== "") {
+              sources.push({ id: `${rec.id}-2`, url: String(p3).trim(), label: "Kaynak 3" });
+            }
+            const translatorName = rec.translator_name || rec.translator || rec.translatorName;
+            const fansubRaw = rec.fansub_name || rec.fansub || rec.team || rec.group || null;
+            const displayName = translatorName
+              ? String(translatorName)
+              : fansubRaw
+              ? String(fansubRaw)
+              : "Bilinmiyor";
+            const fansubName = fansubRaw ? String(fansubRaw) : displayName;
+            return {
+              id: rec.id,
+              fansubName: fansubName,
+              displayName: displayName,
+              playerUrl: sources[0]?.url || "",
+              fansubRaw: fansubRaw ? String(fansubRaw) : undefined,
+              sources,
+            };
+          })
+          .filter((f) => f.sources.length > 0);
+
+        if (fansubs.length === 0) {
+          setPbFansubs([]);
+          setSelectedPbSourceId(null);
+          setPbPlayerUrl(null);
+          setPbPlayerNotice("Bu bölüm için henüz kayıtlı bir oynatıcı bağlantısı yok.");
+          return;
+        }
+
+        // unique by fansub name preserving first occurrence
+        const seen = new Set<string>();
+        const uniqueFansubs: typeof fansubs = [];
+        for (const f of fansubs) {
+          const key = f.fansubName.trim().toLowerCase();
+          if (!seen.has(key)) {
+            seen.add(key);
+            uniqueFansubs.push(f);
+          }
+        }
+
+        setPbFansubs(uniqueFansubs);
+
+        let preferred = uniqueFansubs.find(
+          (f) =>
+            f.fansubName.trim().toLowerCase() ===
+            provName.trim().toLowerCase(),
+        );
+        if (!preferred) {
+          preferred = uniqueFansubs[0];
+        }
+
+        const firstSrc = preferred.sources?.[0];
+        setSelectedPbSourceId(firstSrc?.id || null);
+        setPbPlayerUrl(firstSrc?.url || preferred.playerUrl);
+        setPbPlayerNotice(null);
+      } catch (e) {
+        setPbFansubs([]);
+        setSelectedPbSourceId(null);
+        setPbPlayerUrl(null);
+        setPbPlayerNotice(null);
+      }
+    };
+    loadPbPlayer();
+  }, [animeIdParam, activeEpisodeId, providerNames, rawProviders, allEpisodesData, epParam]);
+
+  // PB fansubleri yukarıda tanımlanmalı
+  const activePbFansubLocal = pbFansubs.find((f: any) =>
+    (f.sources || []).some((src: any) => src.id === selectedPbSourceId),
+  ) || pbFansubs.find((f: any) => f.sources?.[0]?.id === selectedPbSourceId) || pbFansubs[0] || null;
   const cleanParts = activeEpisodeId.replace(/^\//, "").split("/");
   const currentProviderName = cleanParts[1] || providerNames[0] || "";
   const activeCategory: "sub" | "dub" =
@@ -231,102 +354,14 @@ const VideoPlayerSection = () => {
     !activeEpisodeId.includes("watch/") ||
     (!isLoadingData && (!episodeData || !episodeData.sources?.length));
 
-  // Listen to postMessage events from Fallback Player iframe (megaplay.buzz)
-  useEffect(() => {
-    fallbackWatchedRecordIdRef.current = null;
-    lastSyncedTimeRef.current = 0;
-
-    if (!isFallbackActive || !animeIdParam || !activeEpisodeId) return;
-
-    let isMounted = true;
-
-    const initBookmark = async () => {
-      const animeName = anime?.anime?.info?.name || "Anime";
-      const poster = anime?.anime?.info?.poster || "";
-      const bId = await createOrUpdateBookMark(
-        animeIdParam,
-        animeName,
-        poster,
-        "watching",
-        false,
-      );
-      if (isMounted) {
-        fallbackBookmarkIdRef.current = bId;
-      }
-    };
-
-    initBookmark();
-
-    const handleIframeMessage = async (event: MessageEvent) => {
-      let data = event.data;
-      if (typeof data === "string") {
-        try {
-          data = JSON.parse(data);
-        } catch {
-          return;
-        }
-      }
-
-      if (!data || typeof data !== "object") return;
-
-      let currentTime: number | null = null;
-      let duration: number | null = null;
-
-      if (typeof data.currentTime === "number") {
-        currentTime = data.currentTime;
-      } else if (typeof data.time === "number") {
-        currentTime = data.time;
-      }
-
-      if (typeof data.duration === "number") {
-        duration = data.duration;
-      }
-
-      const isComplete = data.event === "complete";
-
-      if (currentTime !== null && duration !== null && duration > 0) {
-        const now = Math.floor(currentTime);
-        if (isComplete || Math.abs(now - lastSyncedTimeRef.current) >= 10) {
-          lastSyncedTimeRef.current = now;
-
-          if (fallbackBookmarkIdRef.current) {
-            const recordId = await syncWatchProgress(
-              fallbackBookmarkIdRef.current,
-              fallbackWatchedRecordIdRef.current,
-              {
-                episodeId: activeEpisodeId,
-                episodeNumber: Number(currentEpNumber) || 1,
-                current: currentTime,
-                duration: duration,
-              },
-            );
-            if (recordId && isMounted) {
-              fallbackWatchedRecordIdRef.current = recordId;
-            }
-          }
-        }
-      }
-    };
-
-    window.addEventListener("message", handleIframeMessage);
-    return () => {
-      isMounted = false;
-      window.removeEventListener("message", handleIframeMessage);
-    };
-  }, [
-    isFallbackActive,
-    activeEpisodeId,
-    animeIdParam,
-    anime,
-    currentEpNumber,
-    createOrUpdateBookMark,
-    syncWatchProgress,
-  ]);
-
   const handleProviderSelect = (pName: string, category: "sub" | "dub") => {
     setPreferredCategory(category);
     localStorage.setItem("preferredCategory", category);
     setUseFallback(false);
+    setPbPlayerUrl(null);
+    setPbFansubs([]);
+    setSelectedPbSourceId(null);
+    setPbPlayerNotice(null);
 
     const pData = rawProviders[pName]?.episodes?.[category] || [];
     const targetEp =
@@ -341,9 +376,17 @@ const VideoPlayerSection = () => {
     }
   };
 
-  if (!activeEpisodeId || isLoadingEpisodes || (isLoadingData && !useFallback)) {
+  if (isLoadingEpisodes || (isLoadingData && !useFallback)) {
     return (
       <div className="h-auto aspect-video lg:max-h-[calc(100vh-150px)] min-h-[20vh] sm:min-h-[30vh] md:min-h-[40vh] lg:min-h-[60vh] w-full animate-pulse bg-slate-800 rounded-xl"></div>
+    );
+  }
+
+  if (!activeEpisodeId) {
+    return (
+      <div className="flex aspect-video w-full items-center justify-center rounded-xl border border-slate-800 bg-slate-950 text-sm text-gray-300">
+        Bu bölüm için kayıtlı bir oynatma bilgisi bulunamadı.
+      </div>
     );
   }
 
@@ -366,22 +409,25 @@ const VideoPlayerSection = () => {
     ? Math.floor((nextAiring.timeUntilAiring % 86400) / 3600)
     : 0;
 
-  const fallbackAnimeId = animeIdParam || anime?.anime?.info?.id || "1";
-  const fallbackEpId = currentEpNumber || "1";
-  const fallbackSrc = `https://megaplay.buzz/stream/ani/${fallbackAnimeId}/${fallbackEpId}/${activeCategory}`;
-
   return (
     <div className="flex flex-col gap-3 w-full">
-      {isFallbackActive || !episodeData ? (
-        <div className="relative w-full h-auto aspect-video min-h-[20vh] sm:min-h-[30vh] md:min-h-[40vh] lg:min-h-[60vh] max-h-[500px] lg:max-h-[calc(100vh-150px)] bg-black overflow-hidden rounded-xl border border-slate-800">
+      {pbPlayerUrl ? (
+        <div className="relative w-full h-0 pb-[56.25%] max-h-[500px] lg:max-h-[calc(100vh-150px)] bg-black overflow-hidden rounded-xl border border-slate-800">
           <iframe
-            key={`${fallbackAnimeId}-${fallbackEpId}-${activeCategory}`}
-            src={fallbackSrc}
+            key={`pb-${animeIdParam}-${currentEpNumber}-${selectedPbSourceId || currentProviderName}`}
+            src={pbPlayerUrl}
             width="100%"
             height="100%"
             allowFullScreen
-            className="w-full h-full border-0"
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+            referrerPolicy="no-referrer-when-downgrade"
+            scrolling="no"
+            className="absolute top-0 left-0 w-full h-full border-0"
           ></iframe>
+        </div>
+      ) : isFallbackActive || !episodeData ? (
+        <div className="flex aspect-video w-full items-center justify-center rounded-xl border border-slate-800 bg-slate-950 px-4 text-center text-sm text-gray-300">
+          Bu bölüm için henüz oynatılabilir bir çeviri veya kaynak eklenmemiş.
         </div>
       ) : (
         <KitsunePlayer
@@ -413,11 +459,95 @@ const VideoPlayerSection = () => {
 
       <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full p-5 bg-[#0f172a] border border-slate-800 rounded-xl">
         <div className="flex flex-col gap-3 w-full md:w-auto">
-          {subProvidersForEp.length > 0 && (
+          {pbFansubs.length > 0 && (
+            <div className="flex flex-col gap-2">
+              {activePbFansubLocal?.fansubRaw && (
+                <p className="text-xs text-gray-400">{activePbFansubLocal.fansubRaw}</p>
+              )}
+              <div className="flex flex-wrap items-center gap-2.5">
+                <Captions className="text-red-400 h-4 w-4 shrink-0" />
+                <p className="font-bold text-xs text-gray-300 tracking-wider">
+                  SUNUCULAR (FANSUBLAR):
+                </p>
+                {pbFansubs.map((f: any) => {
+                  const isActive = activePbFansubLocal?.id === f.id;
+                  const fansubImg = f.image || f.logo || f.avatar || f.fansub_image || f.photo;
+                  return (
+                    <Button
+                      size="sm"
+                      key={f.id}
+                      className={`font-bold text-xs px-3 transition-all flex items-center gap-2 ${
+                        isActive
+                          ? "bg-[#e9376b] text-white shadow-md ring-2 ring-[#e9376b]/40 scale-105"
+                          : "bg-slate-800/80 text-gray-300 hover:bg-slate-700 hover:text-white"
+                      }`}
+                      onClick={() => {
+                        setSelectedPbSourceId(null);
+                        const firstSrc = f.sources?.[0];
+                        if (firstSrc) {
+                          setSelectedPbSourceId(firstSrc.id);
+                          setPbPlayerUrl(firstSrc.url);
+                        } else if (f.playerUrl) {
+                          setPbPlayerUrl(f.playerUrl);
+                        }
+                        setPbPlayerNotice(null);
+                      }}
+                    >
+                      {fansubImg ? (
+                        <img src={fansubImg} alt={f.displayName || f.fansubName} className="w-4 h-4 rounded-full object-cover" />
+                      ) : null}
+                      {f.displayName || f.fansubName || "Bilinmiyor"}
+                    </Button>
+                  );
+                })}
+              </div>
+              {activePbFansubLocal && activePbFansubLocal.sources && activePbFansubLocal.sources.length > 0 && (
+                <div className="flex flex-wrap items-center gap-2.5">
+                  <Server className="text-blue-400 h-4 w-4 shrink-0" />
+                  <p className="font-bold text-xs text-gray-300 tracking-wider">
+                    KAYNAKLAR (SAĞLAYICILAR):
+                  </p>
+                  {activePbFansubLocal.sources.map((src: any, idx: number) => {
+                    const isActive = selectedPbSourceId === src.id;
+                    const getLabel = () => {
+                      if (idx === 0) return "Ana Kaynak";
+                      if (idx === 1) return "Kaynak 2";
+                      if (idx === 2) return "Kaynak 3";
+                      return src.label || `Kaynak ${idx + 1}`;
+                    };
+                    const providerImg = src.image || src.logo || src.provider_image || src.icon;
+                    return (
+                      <Button
+                        size="sm"
+                        key={src.id}
+                        className={`font-bold text-xs px-3 transition-all flex items-center gap-2 ${
+                          isActive
+                            ? "bg-[#e9376b] text-white shadow-md ring-2 ring-[#e9376b]/40 scale-105"
+                            : "bg-slate-800/80 text-gray-300 hover:bg-slate-700 hover:text-white"
+                        }`}
+                        onClick={() => {
+                          setSelectedPbSourceId(src.id);
+                          setPbPlayerUrl(src.url);
+                          setPbPlayerNotice(null);
+                        }}
+                      >
+                        {providerImg ? (
+                          <img src={providerImg} alt={getLabel()} className="w-4 h-4 rounded-full object-cover" />
+                        ) : null}
+                        {getLabel()}
+                      </Button>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          )}
+
+          {pbFansubs.length === 0 && subProvidersForEp.length > 0 && (
             <div className="flex flex-wrap items-center gap-2.5">
               <Captions className="text-red-400 h-4 w-4 shrink-0" />
               <p className="font-bold text-xs text-gray-300 tracking-wider">
-                SUNUCULAR (ALTYAZI):
+                ÇEVİRİLER (FANSUBLAR):
               </p>
               {subProvidersForEp.map((pName) => {
                 const isActive =
@@ -443,11 +573,11 @@ const VideoPlayerSection = () => {
             </div>
           )}
 
-          {dubProvidersForEp.length > 0 && (
+          {pbFansubs.length === 0 && dubProvidersForEp.length > 0 && (
             <div className="flex flex-wrap items-center gap-2.5">
               <Mic className="text-green-400 h-4 w-4 shrink-0" />
               <p className="font-bold text-xs text-gray-300 tracking-wider">
-                SUNUCULAR (DUBLAJ):
+                SESLENDİRMELER (DUBLAJ):
               </p>
               {dubProvidersForEp.map((pName) => {
                 const isActive =
@@ -475,93 +605,41 @@ const VideoPlayerSection = () => {
         </div>
 
         <div className="flex flex-wrap items-center gap-3 text-sm shrink-0 self-start md:self-auto">
-          {localProxyActive && (
-            <a
-              href={COMPANION_UI_URL}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md text-xs font-medium bg-emerald-950/60 text-emerald-300 border border-emerald-800/60 hover:bg-emerald-900/60 transition-colors"
-            >
-              <ShieldCheck className="h-3.5 w-3.5 text-emerald-400" />
-              Companion Aktif
-              <ExternalLink className="h-3 w-3 opacity-75" />
-            </a>
-          )}
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              if (isFallbackActive && subProvidersForEp.length > 0) {
-                handleProviderSelect(subProvidersForEp[0], "sub");
-              } else {
-                setUseFallback(true);
-              }
-            }}
-            className="h-8 px-3 text-xs border-slate-700 bg-slate-800/80 hover:bg-slate-700 text-gray-200 flex items-center gap-1.5"
-          >
-            <Tv className="h-3.5 w-3.5 text-yellow-400" />
-            {isFallbackActive && subProvidersForEp.length > 0
-              ? "Birincil Oynatıcıya Geç"
-              : "Yedek Oynatıcıya Geç"}
-          </Button>
           {!isFallbackActive && (
-            <div className="flex flex-row items-center space-x-2">
-              <Switch
-                checked={autoSkip}
-                onCheckedChange={(e) => onHandleAutoSkipChange(e)}
-                id="auto-skip"
-              />
-              <p>Otomatik Atla</p>
+            <div className="flex flex-col items-start gap-1">
+              {activePbFansubLocal?.fansubRaw && (
+                <p className="text-[10px] text-gray-400 leading-none">{activePbFansubLocal.fansubRaw}</p>
+              )}
+              <div className="flex flex-row items-center space-x-2">
+                <Switch
+                  checked={autoSkip}
+                  onCheckedChange={(e: boolean) => onHandleAutoSkipChange(e)}
+                  id="auto-skip"
+                />
+                <p>Otomatik Atla</p>
+              </div>
             </div>
           )}
         </div>
       </div>
 
-      {isFallbackActive && (
+      {pbPlayerNotice && (
         <Alert
           variant="destructive"
           className="border-amber-800/80 bg-amber-950/40 text-amber-200 rounded-xl"
         >
           <AlertCircle className="h-4 w-4 text-amber-400" />
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 w-full">
-            <div>
-              <AlertTitle className="font-bold">
-                Yedek Video Oynatıcı Etkinleştirildi
-              </AlertTitle>
-              <AlertDescription className="text-xs text-amber-200/80 mt-1">
-                Bu yayın için birincil video oynatıcı kullanılamıyor.
-                Kesintisiz, reklamsız bir deneyim için{" "}
-                <strong className="text-amber-100">Animke Companion</strong>{" "}
-                uygulamasını indirin.
-              </AlertDescription>
-            </div>
-            <Button
-              asChild
-              size="sm"
-              className="shrink-0 bg-[#e9376b] hover:bg-[#d42d5e] text-white font-semibold text-xs px-3.5 h-8 shadow-sm"
-            >
-              <a
-                href={COMPANION_DOWNLOAD_URL}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5"
-              >
-                <Download className="h-3.5 w-3.5" />
-                Companion Uygulamasını İndir
-              </a>
-            </Button>
-          </div>
+          <AlertDescription className="text-xs text-amber-200/80">
+            {pbPlayerNotice}
+          </AlertDescription>
         </Alert>
       )}
 
       {nextAiring && nextAiring.timeUntilAiring > 0 && (
         <Alert className="border-indigo-800/80 bg-indigo-950/40 text-indigo-200 rounded-xl">
           <AlertCircle className="h-4 w-4 text-indigo-400" />
-          <AlertTitle className="font-bold">
-            Bölüm {nextAiring.episode} Yakında Yayınlanacak
-          </AlertTitle>
-          <AlertDescription className="text-xs text-indigo-200/80 mt-1">
-            Sonraki bölümün yayınlanmasına{" "}
+          <AlertDescription className="text-xs text-indigo-200/80">
+            <span className="font-bold">Bölüm {nextAiring.episode} Yakında Yayınlanacak</span> — Sonraki bölümün yayınlanmasına{" "}
             {nextAiringDays > 0 ? `${nextAiringDays} gün ` : ""}
             {nextAiringHours} saat kaldı.
           </AlertDescription>

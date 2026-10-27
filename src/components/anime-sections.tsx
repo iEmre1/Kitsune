@@ -9,6 +9,7 @@ import { MediaList } from "@/types/miruro-api";
 import { ROUTES } from "@/constants/routes";
 
 import Button from "./common/custom-button";
+import ErrorState from "./common/error-state";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
 type Props = {
@@ -18,6 +19,8 @@ type Props = {
   page?: number;
   hasNextPage?: boolean;
   onPageChange?: (newPage: number) => void;
+  isError?: boolean;
+  onRetry?: () => void;
 };
 
 const AnimeSections = ({
@@ -27,8 +30,19 @@ const AnimeSections = ({
   page = 1,
   hasNextPage = false,
   onPageChange,
+  isError = false,
+  onRetry,
 }: Props) => {
-  if (loading || !animeList?.length) return <LoadingSkeleton />;
+  if (isError) {
+    return (
+      <Container className="flex flex-col gap-5 py-10 items-center lg:items-start ">
+        <h5 className="text-2xl font-bold text-white">{sectionTitle}</h5>
+        <ErrorState onRetry={onRetry} className="w-full" />
+      </Container>
+    );
+  }
+  if (loading) return <LoadingSkeleton />;
+  if (!animeList?.length) return <EmptyState sectionTitle={sectionTitle} />;
   return (
     <Container className="flex flex-col gap-5 py-10 items-center lg:items-start ">
       <h5 className="text-2xl font-bold text-white">{sectionTitle}</h5>
@@ -71,6 +85,15 @@ const AnimeSections = ({
           </Button>
         </div>
       )}
+    </Container>
+  );
+};
+
+const EmptyState = ({ sectionTitle }: { sectionTitle: string }) => {
+  return (
+    <Container className="flex flex-col gap-5 py-10 items-center lg:items-start ">
+      <h5 className="text-2xl font-bold text-white">{sectionTitle}</h5>
+      <p className="text-sm text-gray-400">Şu anda gösterilecek anime bulunmuyor.</p>
     </Container>
   );
 };

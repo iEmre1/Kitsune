@@ -1,6 +1,7 @@
 import React from "react";
 import Container from "./container";
 import FeaturedCollectionCard from "./featured-collection-card";
+import ErrorState from "./common/error-state";
 import { MediaList } from "@/types/miruro-api";
 
 type CategoryItem = {
@@ -11,9 +12,24 @@ type CategoryItem = {
 type Props = {
   featuredAnime: CategoryItem[];
   loading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 };
 
-const FeaturedCollection = ({ featuredAnime, loading }: Props) => {
+const FeaturedCollection = ({
+  featuredAnime,
+  loading,
+  isError = false,
+  onRetry,
+}: Props) => {
+  if (isError) {
+    return (
+      <Container className="flex flex-col gap-5 py-10 items-center lg:items-start ">
+        <h5 className="text-2xl font-bold">Öne Çıkan Koleksiyonlar</h5>
+        <ErrorState onRetry={onRetry} className="w-full" />
+      </Container>
+    );
+  }
   if (loading || !featuredAnime?.length) return <LoadingSkeleton />;
   return (
     <Container className="flex flex-col gap-5 items-center lg:items-start py-5">

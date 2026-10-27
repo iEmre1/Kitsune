@@ -1,7 +1,9 @@
 const __name = (fn, _) => fn;
 import { getMedia } from './anilist.js';
+import { anilistGraphQL } from './anilist-web.js';
 
 var ARM2 = "https://arm.haglund.dev/api/v2/ids";
+var ANIZIP = "https://api.ani.zip/mappings";
 var UA2 = "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:109.0) Gecko/20100101 Firefox/121.0";
 function hashFranchiseId(str) {
   let h = 0;
@@ -41,30 +43,38 @@ async function fetchAniListRelations(anilistId) {
     }
   }`;
   try {
-    const res = await fetch("https://graphql.anilist.co", {
-      method: "POST",
-      headers: { "Content-Type": "application/json", "Accept": "application/json" },
-      body: JSON.stringify({ query: q, variables: { id: Number(anilistId) } })
-    });
-    if (!res.ok) return null;
-    const json6 = await res.json();
-    return json6.data?.Media ?? null;
+    const json6 = await anilistGraphQL(q, { id: Number(anilistId) });
+    return json6?.data?.Media ?? null;
   } catch {
     return null;
   }
 }
 __name(fetchAniListRelations, "fetchAniListRelations");
+async function fetchAniZipTitles(anilistId) {
+  try {
+    const res = await fetch(`${ANIZIP}?anilist_id=${anilistId}`, {
+      headers: { "Accept": "application/json" }
+    }).catch(() => null);
+    if (!res || !res.ok) return null;
+    const json = await res.json().catch(() => null);
+    return json?.titles ?? null;
+  } catch {
+    return null;
+  }
+}
+__name(fetchAniZipTitles, "fetchAniZipTitles");
 async function mapAnimeIds(anilistId) {
-  const [arm, media, alRelations] = await Promise.all([
+  const [arm, media, alRelations, azTitles] = await Promise.all([
     fetchARM(anilistId),
     getMedia(anilistId).catch(() => null),
-    fetchAniListRelations(anilistId)
+    fetchAniListRelations(anilistId),
+    fetchAniZipTitles(anilistId)
   ]);
   const malId = arm?.myanimelist ?? null;
   const format = media?.format ?? null;
   const year = media?.seasonYear ?? null;
-  const titleEn = media?.title?.english || null;
-  const titleRom = media?.title?.romaji || null;
+  const titleEn = media?.title?.english || azTitles?.en || null;
+  const titleRom = media?.title?.romaji || azTitles?.["x-jat"] || null;
   const synonyms = [...(media?.synonyms ?? [])];
   if (alRelations?.synonyms) {
     for (const s of alRelations.synonyms) {

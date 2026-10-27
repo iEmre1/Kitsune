@@ -26,6 +26,7 @@ import useBookMarks from "@/hooks/use-get-bookmark";
 import { toast } from "sonner";
 import { useGetAllEpisodes } from "@/query/get-all-episodes";
 import CommentsSection from "@/components/comments/comments-section";
+import ErrorState from "@/components/common/error-state";
 
 type Props = {
   children: ReactNode;
@@ -40,6 +41,8 @@ const Layout = (props: Props) => {
     () => searchParams.get("anime"),
     [searchParams],
   );
+  const seriesAnimeId = searchParams.get("series") || currentAnimeId || "";
+  const seasonNumber = Number(searchParams.get("season")) || undefined;
   const episodeId = searchParams.get("episode");
 
   const epNumberParam = searchParams.get("ep");
@@ -53,7 +56,12 @@ const Layout = (props: Props) => {
     }
   }, [currentAnimeId, animeId]);
 
-  const { data: anime, isLoading } = useGetAnimeDetails(animeId as string);
+  const {
+    data: anime,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetAnimeDetails(animeId as string);
 
   useEffect(() => {
     if (anime) {
@@ -134,6 +142,8 @@ const Layout = (props: Props) => {
 
   const { data: episodes, isLoading: episodeLoading } = useGetAllEpisodes(
     animeId as string,
+    seriesAnimeId,
+    seasonNumber,
   );
 
   // Auto-resolve episode ID if only episode number (ep) is in query or if no episode parameter exists
@@ -159,6 +169,19 @@ const Layout = (props: Props) => {
 
   if (isLoading) return <Loading />;
 
+  if (isError) {
+    return (
+      <Container className="mt-[6.5rem] pb-20">
+        <ErrorState
+          title="Anime bilgileri yüklenemedi"
+          description="AniList servisine ulaşılamadı. Bağlantınızı kontrol edip tekrar deneyin."
+          onRetry={() => refetch()}
+          className="w-full"
+        />
+      </Container>
+    );
+  }
+
   return (
     anime?.anime.info && (
       <Container className="mt-[6.5rem] space-y-10 pb-20">
@@ -169,6 +192,8 @@ const Layout = (props: Props) => {
           {episodes && (
             <EpisodePlaylist
               animeId={animeId as string}
+              seriesAnimeId={seriesAnimeId}
+              seasonNumber={seasonNumber}
               title={
                 !!anime?.anime.info.name
                   ? anime.anime.info.name

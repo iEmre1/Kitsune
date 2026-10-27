@@ -51,3 +51,7 @@ companion/kitsune-companion*
 companion/*.syso
 companion/*.icns
 *.exe
+
+.env
+.env.production
+.env.development

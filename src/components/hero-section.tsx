@@ -17,14 +17,28 @@ import { ROUTES } from "@/constants/routes";
 import { ButtonLink } from "./common/button-link";
 import { MediaList } from "@/types/miruro-api";
 import { Badge } from "./ui/badge";
+import ErrorState from "./common/error-state";
 
 type IHeroSectionProps = {
   spotlightAnime: MediaList[];
   isDataLoading: boolean;
+  isError?: boolean;
+  onRetry?: () => void;
 };
 
 const HeroSection = (props: IHeroSectionProps) => {
   const [api, setApi] = React.useState<CarouselApi>();
+
+  if (props.isError)
+    return (
+      <div className="h-[80vh] w-full flex items-center justify-center px-5">
+        <ErrorState
+          title="Öne çıkan animeler yüklenemedi"
+          onRetry={props.onRetry}
+          className="max-w-lg"
+        />
+      </div>
+    );
 
   if (props.isDataLoading || !props.spotlightAnime?.length)
     return <LoadingSkeleton />;

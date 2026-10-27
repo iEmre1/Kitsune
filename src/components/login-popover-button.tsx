@@ -4,6 +4,7 @@ import Button from "./common/custom-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
 import DiscordIcon from "@/icons/discord";
+import GoogleIcon from "@/icons/google";
 import { pb } from "@/lib/pocketbase";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
@@ -113,25 +114,75 @@ function LoginPopoverButton() {
   };
 
   const loginWithDiscord = async () => {
-    const res = await pb.collection("users").authWithOAuth2({
-      provider: "discord",
-    });
-
-    if (pb.authStore.isValid && pb.authStore.record) {
-      await pb.collection("users").update(pb.authStore.record?.id!, {
-        username: res.meta?.username,
+    try {
+      const res = await pb.collection("users").authWithOAuth2({
+        provider: "discord",
       });
 
-      toast.success("Giriş başarılı", { style: { background: "green" } });
-      auth.setAuth({
-        id: pb.authStore.record.id,
-        email: pb.authStore.record.email,
-        username: pb.authStore.record.username,
-        avatar: pb.authStore.record.avatar,
-        collectionId: pb.authStore.record.collectionId,
-        collectionName: pb.authStore.record.collectionName,
-        autoSkip: pb.authStore.record.autoSkip,
-        created: pb.authStore.record.created,
+      if (pb.authStore.isValid && pb.authStore.record) {
+        if (res.meta?.username && pb.authStore.record.username !== res.meta.username) {
+          try {
+            await pb.collection("users").update(pb.authStore.record.id, {
+              username: res.meta.username,
+            });
+          } catch (e) {
+            // ignore if username update fails
+          }
+        }
+
+        toast.success("Giriş başarılı", { style: { background: "green" } });
+        auth.setAuth({
+          id: pb.authStore.record.id,
+          email: pb.authStore.record.email,
+          username: pb.authStore.record.username,
+          avatar: pb.authStore.record.avatar,
+          collectionId: pb.authStore.record.collectionId,
+          collectionName: pb.authStore.record.collectionName,
+          autoSkip: pb.authStore.record.autoSkip,
+          created: pb.authStore.record.created,
+        });
+      }
+    } catch (e) {
+      console.error("Discord login error:", e);
+      toast.error("Discord ile giriş başarısız oldu", {
+        style: { background: "red" },
+      });
+    }
+  };
+
+  const loginWithGoogle = async () => {
+    try {
+      const res = await pb.collection("users").authWithOAuth2({
+        provider: "google",
+      });
+
+      if (pb.authStore.isValid && pb.authStore.record) {
+        if (res.meta?.username && pb.authStore.record.username !== res.meta.username) {
+          try {
+            await pb.collection("users").update(pb.authStore.record.id, {
+              username: res.meta.username,
+            });
+          } catch (e) {
+            // ignore if username update fails
+          }
+        }
+
+        toast.success("Giriş başarılı", { style: { background: "green" } });
+        auth.setAuth({
+          id: pb.authStore.record.id,
+          email: pb.authStore.record.email,
+          username: pb.authStore.record.username,
+          avatar: pb.authStore.record.avatar,
+          collectionId: pb.authStore.record.collectionId,
+          collectionName: pb.authStore.record.collectionName,
+          autoSkip: pb.authStore.record.autoSkip,
+          created: pb.authStore.record.created,
+        });
+      }
+    } catch (e) {
+      console.error("Google login error:", e);
+      toast.error("Google ile giriş başarısız oldu", {
+        style: { background: "red" },
       });
     }
   };
@@ -207,6 +258,15 @@ function LoginPopoverButton() {
               <DiscordIcon className="mr-2" />
               Discord ile Giriş Yap
             </Button>
+            <Button
+              variant="default"
+              className="bg-white hover:bg-gray-200 text-black w-full text-xs"
+              size="sm"
+              onClick={loginWithGoogle}
+            >
+              <GoogleIcon className="mr-2" />
+              Google ile Giriş Yap
+            </Button>
           </TabsContent>
           <TabsContent value="signup" className="flex flex-col gap-2">
             <div>
@@ -271,6 +331,15 @@ function LoginPopoverButton() {
             >
               <DiscordIcon className="mr-2" />
               Discord ile Kayıt Ol
+            </Button>
+            <Button
+              variant="default"
+              className="bg-white hover:bg-gray-200 text-black w-full text-xs"
+              size="sm"
+              onClick={loginWithGoogle}
+            >
+              <GoogleIcon className="mr-2" />
+              Google ile Kayıt Ol
             </Button>
           </TabsContent>
         </Tabs>

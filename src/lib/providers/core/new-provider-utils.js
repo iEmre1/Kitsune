@@ -1,4 +1,5 @@
 import { get, set, isFresh, SHOW_IDENTITY_TTL } from "./smartcache.js";
+import { anilistGraphQL } from "./anilist-web.js";
 
 export const UA =
   "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/124.0.0.0 Safari/537.36";
@@ -313,13 +314,8 @@ export async function findTopSlugs(titles, searchFn, n = 6) {
 }
 
 async function anilistQuery(query, variables) {
-  const res = await fetch("https://graphql.anilist.co", {
-    method: "POST",
-    headers: { "Content-Type": "application/json", Accept: "application/json" },
-    body: JSON.stringify({ query, variables }),
-  });
-  if (!res.ok) throw new Error(`AniList HTTP ${res.status}`);
-  const json = await res.json();
+  const json = await anilistGraphQL(query, variables);
+  if (!json) throw new Error("AniList is unreachable");
   if (json.errors?.length) throw new Error(`AniList: ${json.errors[0].message}`);
   return json.data;
 }

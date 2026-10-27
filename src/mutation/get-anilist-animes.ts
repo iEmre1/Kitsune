@@ -1,41 +1,43 @@
-import { api } from "@/lib/api";
+"use client";
+
+import { anilistClientQuery } from "@/lib/anilist-client";
 import { AnilistAnimes } from "@/types/anilist-animes";
 import { useMutation } from "@tanstack/react-query";
 
-const getAnilistAnimes = async (username: string) => {
-  const res = await api.post("https://graphql.anilist.co", {
-    query: `
-      query ($username: String) {
-         MediaListCollection(type: ANIME, userName: $username) {
-          lists {
-            name
-            status
-            entries {
-              media {
-                id
-                bannerImage
-                coverImage {
-                  extraLarge
-                  large
-                }
-                idMal
-                title {
-                  english
-                  romaji
-                  native
-                }
-              }
+const ANILIST_LIST_QUERY = `
+  query ($username: String) {
+     MediaListCollection(type: ANIME, userName: $username) {
+      lists {
+        name
+        status
+        entries {
+          media {
+            id
+            bannerImage
+            coverImage {
+              extraLarge
+              large
+            }
+            idMal
+            title {
+              english
+              romaji
+              native
             }
           }
         }
       }
-    `,
-    variables: {
-      username,
-    },
-  });
-  const data = res.data as AnilistAnimes;
-  return data.data;
+    }
+  }
+`;
+
+const getAnilistAnimes = async (username: string) => {
+  const data = await anilistClientQuery<AnilistAnimes["data"]>(
+    ANILIST_LIST_QUERY,
+    { username },
+    5 * 60 * 1000,
+  );
+  return data;
 };
 
 export const useGetAnilistAnimes = () => {

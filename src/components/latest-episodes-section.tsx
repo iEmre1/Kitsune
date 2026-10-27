@@ -5,23 +5,41 @@ import Container from "./container";
 import AnimeCard from "./anime-card";
 import { ROUTES } from "@/constants/routes";
 import BlurFade from "./ui/blur-fade";
-import { useGetRecentAnime } from "@/query/get-recent-anime";
+import { useGetLatestEpisodes } from "@/query/get-latest-episodes";
 import Button from "./common/custom-button";
+import ErrorState from "./common/error-state";
 import { ArrowLeft, ArrowRight } from "lucide-react";
 
-type Props = {
-  loading?: boolean;
-};
-
-const LatestEpisodesAnime = ({ loading: initialLoading }: Props) => {
+const LatestEpisodesAnime = () => {
   const [page, setPage] = useState(1);
-  const { data, isLoading, isFetching } = useGetRecentAnime(page, 14);
+  const { data, isLoading, isError, refetch } = useGetLatestEpisodes(
+    page,
+    14,
+  );
 
   const episodesList = data?.results || [];
   const hasNextPage = data?.hasNextPage ?? false;
 
-  if (isLoading || isFetching || initialLoading || !episodesList.length) {
+  if (isError) {
+    return (
+      <Container className="flex flex-col gap-5 py-10 items-center lg:items-start lg:mt-[-10.125rem] z-20">
+        <h5 className="text-2xl font-bold text-white">Son Bölümler</h5>
+        <ErrorState onRetry={() => refetch()} className="w-full" />
+      </Container>
+    );
+  }
+
+  if (isLoading) {
     return <LoadingSkeleton />;
+  }
+
+  if (!episodesList.length) {
+    return (
+      <Container className="flex flex-col gap-5 py-10 items-center lg:items-start lg:mt-[-10.125rem] z-20">
+        <h5 className="text-2xl font-bold text-white">Son Bölümler</h5>
+        <p className="text-sm text-gray-400">Henüz yeni bölüm eklenmemiş.</p>
+      </Container>
+    );
   }
 
   return (
@@ -33,15 +51,15 @@ const LatestEpisodesAnime = ({ loading: initialLoading }: Props) => {
             anime.title?.english || anime.title?.romaji || anime.title?.native || "Başlıksız";
           const poster =
             anime.coverImage?.extraLarge || anime.coverImage?.large || "";
-          const epNum = anime.episodes || 1;
+          const epNum = anime.latestAddedEpisode ?? anime.episodes ?? 1;
 
           return (
-            <BlurFade key={`${anime.id}-${idx}`} delay={idx * 0.03} inView>
+            <BlurFade key={`${anime.id}-${anime.latestAddedEpisode ?? idx}`} delay={idx * 0.03} inView>
               <AnimeCard
                 title={title}
                 format={anime.format}
                 score={anime.averageScore}
-                episodes={epNum}
+                episodes={anime.latestAddedEpisode}
                 poster={poster}
                 className="self-center justify-self-center"
                 href={`${ROUTES.WATCH}?anime=${anime.id}&ep=${epNum}`}

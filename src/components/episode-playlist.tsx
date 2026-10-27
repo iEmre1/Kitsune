@@ -9,9 +9,14 @@ import { Episode, IEpisodes } from "@/types/episodes";
 import Select, { ISelectOptions } from "./common/select";
 import { Input } from "./ui/input";
 import { Bookmark } from "@/hooks/use-get-bookmark";
+import { useGetAnimeSeasons } from "@/query/get-anime-seasons";
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
 
 type Props = {
   animeId: string;
+  seriesAnimeId?: string;
+  seasonNumber?: number;
   title: string;
   subOrDub?: { sub: number; dub: number };
   episodes: IEpisodes;
@@ -21,6 +26,8 @@ type Props = {
 
 const EpisodePlaylist = ({
   animeId,
+  seriesAnimeId,
+  seasonNumber,
   title,
   subOrDub,
   episodes,
@@ -28,6 +35,8 @@ const EpisodePlaylist = ({
   bookmarks,
 }: Props) => {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  const { data: seasons = [] } = useGetAnimeSeasons(animeId);
 
   const episodeId = searchParams.get("episode");
 
@@ -50,6 +59,14 @@ const EpisodePlaylist = ({
 
   const [filteredEpisodes, setFilteredEpisodes] =
     React.useState<Episode[]>(filtered);
+
+  useEffect(() => {
+    const end = Math.min(50, episodes?.totalEpisodes || 0);
+    setCurrentGroup(`1 - ${end}`);
+    setSearch("");
+    setFilteredEpisodes(episodes?.episodes.slice(0, 50) || []);
+    if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
+  }, [episodes]);
 
   useEffect(() => {
     const epQuery = searchParams.get("ep");
@@ -137,6 +154,17 @@ const EpisodePlaylist = ({
     }
   };
 
+  const handleSeasonChange = (seasonAnimeId: string) => {
+    const params = new URLSearchParams(searchParams.toString());
+    const rootSeriesId = seriesAnimeId || animeId;
+    params.set("anime", animeId);
+    params.set("series", rootSeriesId);
+    params.set("season", seasonAnimeId);
+    params.set("ep", "1");
+    params.delete("episode");
+    router.push(`${ROUTES.WATCH}?${params.toString()}`);
+  };
+
   const groupOptions = (): ISelectOptions[] => {
     let start = 1;
     const end = episodes?.totalEpisodes;
@@ -159,19 +187,28 @@ const EpisodePlaylist = ({
         <div className="h-fit bg-[#18181a] px-5 py-3">
           <h3 className="text-lg font-semibold"> Bölüm Listesi</h3>
           <span className="text-sm font-thin">{title}</span>
-          <div className="flex flex-row w-full items-center justify-between gap-2 mt-2">
+          <div className="flex w-full min-w-0 items-center gap-2 mt-2">
+            {seasons.length > 1 && (
+              <Select
+                placeholder="Sezon"
+                value={String(seasonNumber || seasons[0]?.seasonNumber || 1)}
+                options={seasons}
+                onChange={handleSeasonChange}
+                className="w-[105px] shrink-0"
+              />
+            )}
             <Input
               placeholder="Bölüm Ara"
               value={search}
               onChange={handleOnSearchChange}
-              className="w-1/2"
+              className="min-w-0 flex-1"
             />
             <Select
               value={currentGroup}
               placeholder={currentGroup}
               onChange={handleOnSelectChange}
               options={groupOptions()}
-              className="w-1/2"
+              className="w-[105px] shrink-0"
             />
           </div>
         </div>
@@ -188,11 +225,13 @@ const EpisodePlaylist = ({
                   variant={"list"}
                   episode={episode}
                   animeId={animeId}
+                  seriesAnimeId={seriesAnimeId || animeId}
+                  seasonNumber={seasonNumber || seasons[0]?.seasonNumber || 1}
                   watchedEpisodes={bookmarks?.[0].expand.watchHistory}
                 />
               </div>
             ))}
-          {!filteredEpisodes?.length && !isLoading && "Bölüm bulunamadı"}
+          {!filteredEpisodes?.length && !isLoading && "Bu aralıkta gösterilecek bölüm yok."}
           {isLoading && <PlaylistSkeleton />}
         </div>
       </div>

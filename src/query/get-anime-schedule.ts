@@ -1,19 +1,21 @@
+"use client";
+
 import { GET_ANIME_SCHEDULE } from "@/constants/query-keys";
-import { api } from "@/lib/api";
+import { fetchSchedule } from "@/lib/anilist-client";
 import { IAnimeSchedule } from "@/types/anime-schedule";
-import { ScheduleItem, PaginatedResponse } from "@/types/miruro-api";
 import { useQuery } from "@tanstack/react-query";
 
 const getAnimeSchedule = async (date?: string): Promise<IAnimeSchedule> => {
-  const res = await api.get<PaginatedResponse<ScheduleItem>>("/schedule", {
-    params: date ? { date } : undefined,
-  });
-  const items = res.data.results || [];
+  const data = await fetchSchedule(date);
+  const items = data.results || [];
 
   const scheduledAnimes = items.map((item) => {
     const hours = Math.floor((item.timeUntilAiring || 0) / 3600);
     const minutes = Math.floor(((item.timeUntilAiring || 0) % 3600) / 60);
-    const timeString = item.timeUntilAiring > 0 ? `${hours} saat ${minutes} dk içinde` : "Yakında yayınlanacak";
+    const timeString =
+      item.timeUntilAiring > 0
+        ? `${hours} saat ${minutes} dk içinde`
+        : "Yakında yayınlanacak";
 
     return {
       id: String(item.id),
@@ -34,7 +36,8 @@ export const useGetAnimeSchedule = (date?: string) => {
   return useQuery({
     queryFn: () => getAnimeSchedule(date),
     queryKey: [GET_ANIME_SCHEDULE, date],
+    staleTime: 1000 * 60 * 5,
+    refetchOnWindowFocus: false,
+    retry: 1,
   });
 };
-
-

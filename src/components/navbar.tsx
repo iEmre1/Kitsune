@@ -43,37 +43,87 @@ const NavBar = () => {
   const isHeaderSticky = y > 0;
 
   useEffect(() => {
-    const refreshAuth = async () => {
-      const auth_token = JSON.parse(
-        localStorage.getItem("pocketbase_auth") as string,
-      );
-      if (auth_token) {
+    let mounted = true;
+
+    const forceLogout = (showToast = true) => {
+      try {
+        pb.authStore.clear();
+      } catch {}
+      try {
+        localStorage.removeItem("pocketbase_auth");
+        localStorage.removeItem("pb_auth");
+      } catch {}
+      try {
+        auth.clearAuth();
+      } catch {}
+      if (mounted && showToast) {
         try {
-          const user = await pb.collection("users").authRefresh();
-          if (user) {
-            auth.setAuth({
-              id: user.record.id,
-              email: user.record.email,
-              username: user.record.username,
-              avatar: user.record.avatar,
-              collectionId: user.record.collectionId,
-              collectionName: user.record.collectionName,
-              autoSkip: user.record.autoSkip,
-              created: user.record.created,
-            });
-          }
-        } catch (e) {
-          console.error("Auth refresh error:", e);
-          localStorage.removeItem("pocketbase_auth");
-          auth.clearAuth();
           toast.error("Giriş oturumu sona erdi.", {
             style: { background: "red" },
           });
-        }
+        } catch {}
       }
     };
+
+    const refreshAuth = async () => {
+      try {
+        const stored =
+          localStorage.getItem("pocketbase_auth") ||
+          localStorage.getItem("pb_auth");
+        if (stored || pb.authStore.isValid) {
+          try {
+            const user = await pb.collection("users").authRefresh();
+            if (!mounted) return;
+            if (user && user.record) {
+              auth.setAuth({
+                id: user.record.id,
+                email: user.record.email,
+                username: user.record.username,
+                avatar: user.record.avatar,
+                collectionId: user.record.collectionId,
+                collectionName: user.record.collectionName,
+                autoSkip: user.record.autoSkip,
+                created: user.record.created,
+              });
+            } else if (!pb.authStore.isValid) {
+              forceLogout(true);
+            }
+          } catch (e) {
+            console.error("Auth refresh error:", e);
+            if (!mounted) return;
+            forceLogout(true);
+          }
+        }
+      } catch (e) {
+        // ignore
+      }
+    };
+
+    const unsub = pb.authStore.onChange(() => {
+      if (!mounted) return;
+      if (pb.authStore.isValid && pb.authStore.record) {
+        auth.setAuth({
+          id: pb.authStore.record.id,
+          email: pb.authStore.record.email,
+          username: pb.authStore.record.username,
+          avatar: pb.authStore.record.avatar,
+          collectionId: pb.authStore.record.collectionId,
+          collectionName: pb.authStore.record.collectionName,
+          autoSkip: pb.authStore.record.autoSkip,
+          created: pb.authStore.record.created,
+        });
+      } else {
+        forceLogout(false);
+      }
+    });
+
     refreshAuth();
-  }, []);
+
+    return () => {
+      mounted = false;
+      unsub();
+    };
+  }, [auth]);
 
   return (
     <div

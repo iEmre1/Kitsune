@@ -1,5 +1,5 @@
 "use client";
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import Image from "next/image";
 
 import parse from "html-react-parser";
@@ -30,6 +30,9 @@ import Loading from "@/app/loading";
 import { useAuthStore } from "@/store/auth-store";
 import { toast } from "sonner";
 import useBookMarks from "@/hooks/use-get-bookmark";
+import ErrorState from "@/components/common/error-state";
+import { fetchAnimeImages } from "@/lib/anilist-client";
+import { trackEvent } from "@/lib/analytics";
 
 const SelectOptions: ISelectOptions[] = [
   {
@@ -61,7 +64,12 @@ const SelectOptions: ISelectOptions[] = [
 
 const Page = () => {
   const { slug } = useParams();
-  const { data: anime, isLoading } = useGetAnimeDetails(slug as string);
+  const {
+    data: anime,
+    isLoading,
+    isError,
+    refetch,
+  } = useGetAnimeDetails(slug as string);
   const { auth } = useAuthStore();
   const { bookmarks, createOrUpdateBookMark } = useBookMarks({
     animeID: slug as string,
@@ -74,6 +82,35 @@ const Page = () => {
   const [selected, setSelected] = useState(
     bookmarks?.[0]?.status ? normalizeStatus(bookmarks[0].status) : "",
   );
+  const [bannerSrc, setBannerSrc] = useState("");
+  const [triedApiBanner, setTriedApiBanner] = useState(false);
+  const trackedAnimeId = useRef("");
+
+  useEffect(() => {
+    const info = anime?.anime.info;
+    if (!info || trackedAnimeId.current === info.id) return;
+    trackedAnimeId.current = info.id;
+    trackEvent("view_item", {
+      item_id: info.id,
+      item_name: info.name,
+      content_type: "anime",
+    });
+  }, [anime?.anime.info.id, anime?.anime.info.name]);
+
+  useEffect(() => {
+    const source = anime?.anime.info.bannerImage || anime?.anime.info.poster || "";
+    setBannerSrc(source);
+    setTriedApiBanner(false);
+
+    if (!source || source === "/icon.png") {
+      setTriedApiBanner(true);
+      void fetchAnimeImages(
+        Number(anime?.anime.info.anilistId || anime?.anime.info.id),
+      )
+        .then((images) => setBannerSrc(images.banner || images.poster || "/icon.png"))
+        .catch(() => setBannerSrc("/icon.png"));
+    }
+  }, [anime?.anime.info.id, anime?.anime.info.bannerImage, anime?.anime.info.poster]);
 
   useEffect(() => {
     const currentStatus = bookmarks?.[0]?.status;
@@ -108,20 +145,46 @@ const Page = () => {
     }
   };
 
+  if (isError) {
+    return (
+      <Container className="py-20">
+        <ErrorState
+          title="Anime bilgileri yüklenemedi"
+          description="Anime bilgileri alınamadı."
+          onRetry={() => refetch()}
+          className="w-full"
+        />
+      </Container>
+    );
+  }
+
   return isLoading || !anime ? (
     <Loading />
   ) : (
     <div className="w-full z-50">
       <div className="h-[30vh] md:h-[40vh] w-full relative ">
         <Image
-          src={
-            anime.anime.info.bannerImage || anime.anime.info.poster
-          }
+          src={bannerSrc || anime.anime.info.bannerImage || anime.anime.info.poster}
           alt={anime.anime.info.name}
           height={100}
           width={100}
           className="h-full w-full object-cover"
           unoptimized
+          onError={async () => {
+            if (triedApiBanner) {
+              setBannerSrc("/icon.png");
+              return;
+            }
+            setTriedApiBanner(true);
+            try {
+              const images = await fetchAnimeImages(
+                Number(anime.anime.info.anilistId || anime.anime.info.id),
+              );
+              setBannerSrc(images.banner || images.poster || "/icon.png");
+            } catch {
+              setBannerSrc("/icon.png");
+            }
+          }}
         />
 
         <WatchTrailer
@@ -158,7 +221,7 @@ const Page = () => {
           </div>
         </div>
         <Tabs defaultValue="overview" className="w-full">
-          <TabsList className="flex items-center justify-start w-fit text-2xl h-fit">
+          <TabsList className="flex h-fit w-fit items-center justify-start gap-5 px-2 text-2xl md:gap-8">
             <TabsTrigger
               value="overview"
               className="md:text-2xl text-lg font-semibold"

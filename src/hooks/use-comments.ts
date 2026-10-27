@@ -123,8 +123,9 @@ export const useGetInfiniteComments = ({
       return undefined;
     },
     enabled: !!animeId,
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchInterval: 120 * 1000,
   });
 };
 
@@ -147,8 +148,9 @@ export const useGetRecentComments = (limit: number = 10) => {
         return [];
       }
     },
-    staleTime: 0,
-    refetchOnWindowFocus: true,
+    staleTime: 60 * 1000,
+    refetchOnWindowFocus: false,
+    refetchInterval: 120 * 1000,
   });
 };
 

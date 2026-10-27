@@ -9,7 +9,7 @@ type Props = {
 };
 
 const FeaturedCollectionCard = (props: Props) => {
-  if (!props.anime || props.anime.length < 3) return null;
+  if (!props.anime || props.anime.length === 0) return null;
 
   return (
     <div className="h-[18.5rem] flex flex-col gap-2 items-center rounded-lg overflow-hidden bg-[#212121] w-full">

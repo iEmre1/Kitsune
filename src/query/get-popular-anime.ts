@@ -1,4 +1,6 @@
-import { api } from "@/lib/api";
+"use client";
+
+import { fetchMediaPage } from "@/lib/anilist-client";
 import { MediaList, PaginatedResponse } from "@/types/miruro-api";
 import { useQuery } from "@tanstack/react-query";
 
@@ -8,10 +10,11 @@ const getPopularAnime = async (
   page = 1,
   perPage = 20,
 ): Promise<PaginatedResponse<MediaList>> => {
-  const res = await api.get<PaginatedResponse<MediaList>>("/popular", {
-    params: { page, per_page: perPage },
+  const data = await fetchMediaPage({
+    page,
+    perPage,
+    sort: ["POPULARITY_DESC"],
   });
-  const data = res.data;
   return {
     ...data,
     results: (data.results || []).filter((item) => !item.isAdult),
@@ -24,5 +27,6 @@ export const useGetPopularAnime = (page = 1, perPage = 20) => {
     queryKey: [GET_POPULAR_ANIME, page, perPage],
     staleTime: 1000 * 60 * 5,
     refetchOnWindowFocus: false,
+    retry: 1,
   });
 };

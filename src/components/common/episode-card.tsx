@@ -13,12 +13,15 @@ import Link from "next/link";
 import { WatchHistory } from "@/hooks/use-get-bookmark";
 
 import { useSearchParams } from "next/navigation";
+import { trackEvent } from "@/lib/analytics";
 
 type Props = {
   className?: string;
   episode: Episode;
   showCard?: boolean;
   animeId: string;
+  seriesAnimeId?: string;
+  seasonNumber?: number;
   variant?: "card" | "list";
   subOrDub?: { sub: number; dub: number };
   watchedEpisodes?: WatchHistory[] | null;
@@ -47,6 +50,18 @@ const EpisodeCard = ({
       : selectedEpisode === props.episode.episodeId ||
         (!!selectedEpisode && selectedEpisode.endsWith(`/${props.episode.number}`));
 
+  const handleEpisodeClick = () => {
+    trackEvent("select_episode", {
+      anime_id: props.animeId,
+      episode_number: props.episode.number,
+    });
+  };
+  const watchHref = `${ROUTES.WATCH}?anime=${props.animeId}&ep=${props.episode.number}${
+    props.seriesAnimeId && props.seriesAnimeId !== props.animeId
+      ? `&series=${props.seriesAnimeId}`
+      : ""
+  }${props.seasonNumber ? `&season=${props.seasonNumber}` : ""}`;
+
   if (showCard && variant === "card") {
     return (
       <div
@@ -65,7 +80,8 @@ const EpisodeCard = ({
   } else if (!showCard && variant === "card") {
     return (
       <Link
-        href={`${ROUTES.WATCH}?anime=${props.animeId}&ep=${props.episode.number}`}
+        href={watchHref}
+        onClick={handleEpisodeClick}
       >
         <div
           className={cn([
@@ -81,7 +97,8 @@ const EpisodeCard = ({
   } else {
     return (
       <Link
-        href={`${ROUTES.WATCH}?anime=${props.animeId}&ep=${props.episode.number}`}
+        href={watchHref}
+        onClick={handleEpisodeClick}
       >
         <div
           className={cn([

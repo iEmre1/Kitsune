@@ -10,6 +10,8 @@ import { cn } from "@/lib/utils";
 import { useRouter } from "next/navigation";
 import { Button } from "./ui/button";
 import Tooltip from "./common/tooltip";
+import { fetchAnimeImages } from "@/lib/anilist-client";
+import { trackEvent } from "@/lib/analytics";
 
 const SearchBar = ({
   className,
@@ -22,6 +24,8 @@ const SearchBar = ({
   const [isFocused, setIsFocused] = useState<boolean>(false);
   const debouncedValue = useDebounce(searchValue, 300);
   const containerRef = useRef<HTMLDivElement | null>(null);
+  const imageFallbackTried = useRef(new Set<string>());
+  const [posterOverrides, setPosterOverrides] = useState<Record<string, string>>({});
   const router = useRouter();
 
   const { data: searchResults, isLoading } = useSearchAnime(debouncedValue);
@@ -51,9 +55,38 @@ const SearchBar = ({
     }
   };
 
+  const handlePosterError = async (anime: (typeof searchResults extends (infer T)[] | undefined ? T : never)) => {
+    const animeId = String(anime.id);
+    if (imageFallbackTried.current.has(animeId)) {
+      setPosterOverrides((current) => ({ ...current, [animeId]: "/icon.png" }));
+      return;
+    }
+    imageFallbackTried.current.add(animeId);
+
+    try {
+      const images = await fetchAnimeImages(Number(anime.id));
+      setPosterOverrides((current) => ({
+        ...current,
+        [animeId]: images.poster || "/icon.png",
+      }));
+    } catch {
+      setPosterOverrides((current) => ({ ...current, [animeId]: "/icon.png" }));
+    }
+  };
+
+  useEffect(() => {
+    searchResults?.forEach((anime) => {
+      if (!anime.poster || anime.poster === "/icon.png") {
+        void handlePosterError(anime);
+      }
+    });
+  }, [searchResults]);
+
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" && searchValue.trim()) {
-      router.push(`${ROUTES.SEARCH}?q=${encodeURIComponent(searchValue.trim())}`);
+      const searchTerm = searchValue.trim();
+      trackEvent("search", { search_query_length: searchTerm.length });
+      router.push(`${ROUTES.SEARCH}?q=${encodeURIComponent(searchTerm)}`);
       setIsFocused(false);
       if (onAnimeClick) {
         onAnimeClick();
@@ -77,7 +110,10 @@ const SearchBar = ({
         variant="secondary"
         className="absolute text-white right-2 top-1/2 -translate-y-1/2 h-2/3"
         onClick={() => {
+          setSearchValue("");
+          setIsFocused(false);
           router.push(ROUTES.SEARCH + '?q=""');
+          onAnimeClick?.();
         }}
       >
         <Tooltip side="bottom" content="Filtre">
@@ -102,7 +138,7 @@ const SearchBar = ({
               })}
 
             {!isLoading && searchResults && searchResults.length === 0 && (
-              <p className="text-sm text-gray-400 py-4 text-center">Anime bulunamadı</p>
+              <p className="text-sm text-gray-400 py-4 text-center">Aramana uygun anime yok.</p>
             )}
 
             {searchResults?.map((anime) => (
@@ -113,11 +149,13 @@ const SearchBar = ({
                 >
                   <div className="h-[6.25rem] w-[5rem] overflow-hidden rounded-md flex-shrink-0">
                     <Image
-                      src={anime.poster}
+                      src={posterOverrides[anime.id] || anime.poster}
                       alt={anime.name}
                       height={100}
                       width={100}
                       className="h-full w-full object-cover"
+                      unoptimized
+                      onError={() => void handlePosterError(anime)}
                     />
                   </div>
                   <div className="flex flex-col gap-2">
@@ -165,7 +203,7 @@ const SearchBar = ({
               })}
 
             {!isLoading && searchResults && searchResults.length === 0 && (
-              <p className="text-sm text-gray-400 py-3 text-center">Anime bulunamadı</p>
+              <p className="text-sm text-gray-400 py-3 text-center">Aramana uygun anime yok.</p>
             )}
 
             {searchResults?.slice(0, 5).map((anime) => (
@@ -176,11 +214,13 @@ const SearchBar = ({
                 >
                   <div className="h-[2.5rem] w-[1.875rem] overflow-hidden rounded-md flex-shrink-0">
                     <Image
-                      src={anime.poster}
+                      src={posterOverrides[anime.id] || anime.poster}
                       alt={anime.name}
                       height={100}
                       width={100}
                       className="h-full w-full object-cover"
+                      unoptimized
+                      onError={() => void handlePosterError(anime)}
                     />
                   </div>
                   <div className="flex flex-col gap-1 text-sm overflow-hidden">

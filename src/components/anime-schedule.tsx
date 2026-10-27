@@ -3,6 +3,7 @@ import React, { useMemo } from "react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { useGetAnimeSchedule } from "@/query/get-anime-schedule";
 import Button from "./common/custom-button";
+import ErrorState from "./common/error-state";
 import Link from "next/link";
 import Image from "next/image";
 import { ROUTES } from "@/constants/routes";
@@ -49,7 +50,7 @@ function AnimeSchedule() {
     return `${yyyy}-${mm}-${dd}`;
   }, [currentSelectedTab]);
 
-  const { isLoading, data } = useGetAnimeSchedule(selectedDate);
+  const { isLoading, isError, refetch, data } = useGetAnimeSchedule(selectedDate);
 
   function getDateForWeekday(targetDay: string) {
     const offset = Math.max(0, daysOfWeek.indexOf(targetDay));
@@ -107,13 +108,20 @@ function AnimeSchedule() {
 
         {/* Schedule Cards Content */}
         <div className="flex-1 w-full min-h-[300px]">
-          {isLoading ? (
+          {isError ? (
+            <ErrorState onRetry={() => refetch()} />
+          ) : isLoading ? (
             <LoadingSkeleton />
           ) : (
             daysOfWeek.map((day) => (
               <TabsContent key={day} value={day} className="mt-0">
                 {day === currentSelectedTab && (
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
+                    {!data?.scheduledAnimes?.length && (
+                      <p className="col-span-full text-sm text-gray-400 py-10 text-center">
+                        Bu gün için planlanmış bir yayın bulunmuyor.
+                      </p>
+                    )}
                     {data?.scheduledAnimes.map((anime, idx) => {
                       const timeFormatted = new Date(
                         anime.airingTimestamp,
