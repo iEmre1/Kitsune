@@ -55,9 +55,10 @@ function LoginPopoverButton() {
       }
     } catch (e) {
       console.error("Login error:", e);
-      toast.error("Geçersiz kullanıcı adı veya şifre", {
-        style: { background: "red" },
-      });
+      toast.error(
+        "Giriş başarısız. Bilgilerinizi kontrol edin veya e-postanızı doğrulayın.",
+        { style: { background: "red" } }
+      );
     }
   };
 
@@ -83,9 +84,18 @@ function LoginPopoverButton() {
       });
 
       if (user) {
-        toast.success("Hesap başarıyla oluşturuldu. Lütfen giriş yapın.", {
-          style: { background: "green" },
-        });
+        try {
+          await pb.collection("users").requestVerification(formData.email);
+          toast.success(
+            "Hesap oluşturuldu. Lütfen e-postanıza gelen doğrulama bağlantısına tıklayıp hesabınızı doğrulayın, ardından hesaba giriş yapın.",
+            { style: { background: "green" } }
+          );
+        } catch (err) {
+          console.error("Verification email error:", err);
+          toast.success("Hesap oluşturuldu. Lütfen giriş yapın.", {
+            style: { background: "green" },
+          });
+        }
         clearForm();
         setTabValue("login");
       }
