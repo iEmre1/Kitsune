@@ -3,19 +3,17 @@
 import React, { useEffect, useState, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { pb } from "@/lib/pocketbase";
-import { CheckCircle2, XCircle, Loader2 } from "lucide-react";
+import { Loader2, CheckCircle2, AlertCircle } from "lucide-react";
 import { toast } from "sonner";
 import Link from "next/link";
+import Container from "@/components/container";
 
-// Next.js'e bu sayfanın dinamik (URL parametresi alan) bir sayfa olduğunu açıkça belirtiyoruz
 export const dynamic = "force-dynamic";
 
 function VerificationHandler() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [status, setStatus] = useState<"loading" | "success" | "error">(
-    "loading"
-  );
+  const [status, setStatus] = useState<"loading" | "success" | "error">("loading");
 
   useEffect(() => {
     const verifyEmail = async () => {
@@ -27,19 +25,18 @@ function VerificationHandler() {
       }
 
       try {
-        // PocketBase üzerinde doğrulamayı tetikliyoruz
         await pb.collection("users").confirmVerification(token);
         setStatus("success");
         toast.success("E-posta adresiniz doğrulandı!");
-
-        // 3 saniye sonra kullanıcıyı ana sayfaya yönlendir
+        
+        // 3 saniye sonra yumuşakça ana sayfaya yönlendir
         setTimeout(() => {
           router.push("/");
         }, 3000);
       } catch (error) {
         console.error("Verification error:", error);
         setStatus("error");
-        toast.error("Doğrulama linki geçersiz veya süresi dolmuş.");
+        toast.error("Doğrulama linki geçersiz.");
       }
     };
 
@@ -47,59 +44,68 @@ function VerificationHandler() {
   }, [searchParams, router]);
 
   return (
-    <div className="flex flex-col items-center justify-center p-8 rounded-2xl bg-slate-900 border border-white/10 shadow-2xl max-w-sm w-full mx-4 text-center animate-in fade-in zoom-in-95 duration-200">
+    <Container className="max-w-md w-full mx-auto px-4 flex flex-col items-center justify-center text-center">
       {status === "loading" && (
-        <>
-          <Loader2 className="h-12 w-12 text-pink-500 animate-spin mb-4" />
-          <h2 className="text-xl font-semibold text-gray-200 mb-2">
-            Hesabınız Onaylanıyor
-          </h2>
-          <p className="text-sm text-gray-400">
-            Lütfen bekleyin, e-posta adresiniz doğrulanıyor...
-          </p>
-        </>
+        <div className="flex flex-col items-center gap-4 animate-in fade-in duration-300">
+          <Loader2 className="h-10 w-10 text-pink-600 animate-spin" />
+          <div className="space-y-1">
+            <h2 className="text-xl font-bold text-gray-100 tracking-tight">Hesabınız onaylanıyor</h2>
+            <p className="text-sm text-gray-400 max-w-xs">
+              Lütfen bekleyin, e-posta adresiniz PocketBase altyapısı üzerinden doğrulanıyor.
+            </p>
+          </div>
+        </div>
       )}
 
       {status === "success" && (
-        <>
-          <CheckCircle2 className="h-12 w-12 text-green-500 mb-4 animate-bounce" />
-          <h2 className="text-xl font-semibold text-gray-200 mb-2">
-            Doğrulama Başarılı!
-          </h2>
-          <p className="text-sm text-gray-400">
-            E-posta adresiniz onaylandı. Giriş yapmaya hazırsınız. Ana sayfaya
-            yönlendiriliyorsunuz...
-          </p>
-        </>
+        <div className="flex flex-col items-center gap-5 animate-in fade-in zoom-in-95 duration-300">
+          <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-full text-emerald-500 animate-bounce">
+            <CheckCircle2 className="h-8 w-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-emerald-400">
+              Doğrulama başarılı!
+            </h2>
+            <p className="text-sm text-gray-400 max-w-xs">
+              E-posta adresiniz başarıyla onaylandı. Reklamsız anime deneyimine hazırsınız. Ana sayfaya aktarılıyorsunuz...
+            </p>
+          </div>
+        </div>
       )}
 
       {status === "error" && (
-        <>
-          <XCircle className="h-12 w-12 text-red-500 mb-4" />
-          <h2 className="text-xl font-semibold text-gray-200 mb-2">
-            Onay Başarısız
-          </h2>
-          <p className="text-sm text-gray-400 mb-4">
-            Bu doğrulama linki geçersiz, süresi dolmuş veya daha önce
-            kullanılmış olabilir.
-          </p>
-          <Link href="/" className="text-xs text-pink-500 hover:underline">
-            Ana Sayfaya Dön
+        <div className="flex flex-col items-center gap-5 animate-in fade-in zoom-in-95 duration-300">
+          <div className="p-3 bg-red-500/10 border border-red-500/20 rounded-full text-red-500">
+            <AlertCircle className="h-8 w-8" />
+          </div>
+          <div className="space-y-2">
+            <h2 className="text-2xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-red-400">
+              Onay başarısız
+            </h2>
+            <p className="text-sm text-gray-400 max-w-sm">
+              Bu doğrulama bağlantısı geçersiz, süresi dolmuş veya daha önce kullanılmış olabilir.
+            </p>
+          </div>
+          <Link 
+            href="/" 
+            className="mt-2 px-5 py-2 text-sm font-medium bg-slate-900 border border-white/10 rounded-lg hover:bg-slate-800 text-gray-300 transition-colors"
+          >
+            Ana sayfaya dön
           </Link>
-        </>
+        </div>
       )}
-    </div>
+    </Container>
   );
 }
 
 export default function ConfirmVerificationPage() {
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950">
+    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-[#121212]">
       <Suspense
         fallback={
-          <div className="text-center text-gray-400">
-            <Loader2 className="h-8 w-8 text-pink-500 animate-spin mx-auto mb-2" />
-            Yükleniyor...
+          <div className="text-center text-gray-400 flex flex-col items-center gap-2">
+            <Loader2 className="h-8 w-8 text-pink-600 animate-spin" />
+            <span className="text-xs">Sayfa hazırlanıyor...</span>
           </div>
         }
       >
