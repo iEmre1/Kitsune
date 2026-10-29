@@ -48,20 +48,20 @@ const NavBar = () => {
     const forceLogout = (showToast = true) => {
       try {
         pb.authStore.clear();
-      } catch {}
+      } catch { }
       try {
         localStorage.removeItem("pocketbase_auth");
         localStorage.removeItem("pb_auth");
-      } catch {}
+      } catch { }
       try {
-        auth.clearAuth();
-      } catch {}
+        useAuthStore.getState().clearAuth();
+      } catch { }
       if (mounted && showToast) {
         try {
           toast.error("Giriş oturumu sona erdi.", {
             style: { background: "red" },
           });
-        } catch {}
+        } catch { }
       }
     };
 
@@ -75,7 +75,7 @@ const NavBar = () => {
             const user = await pb.collection("users").authRefresh();
             if (!mounted) return;
             if (user && user.record) {
-              auth.setAuth({
+              useAuthStore.getState().setAuth({
                 id: user.record.id,
                 email: user.record.email,
                 username: user.record.username,
@@ -102,7 +102,7 @@ const NavBar = () => {
     const unsub = pb.authStore.onChange(() => {
       if (!mounted) return;
       if (pb.authStore.isValid && pb.authStore.record) {
-        auth.setAuth({
+        useAuthStore.getState().setAuth({
           id: pb.authStore.record.id,
           email: pb.authStore.record.email,
           username: pb.authStore.record.username,
@@ -123,7 +123,7 @@ const NavBar = () => {
       mounted = false;
       unsub();
     };
-  }, [auth]);
+  }, []);
 
   return (
     <div
