@@ -21,7 +21,21 @@ import { pb } from "@/lib/pocketbase";
 import NavbarAvatar from "./navbar-avatar";
 import { toast } from "sonner";
 
-const menuItems: Array<{ title: string; href?: string }> = [];
+const menuItems: Array<{ title: string; href?: string }> = [
+  // {
+  //   title: "Home",
+  //   href: ROUTES.HOME,
+  // },
+  // {
+  //   title: "Catalog",
+  // },
+  // {
+  //   title: "News",
+  // },
+  // {
+  //   title: "Collection",
+  // },
+];
 
 const NavBar = () => {
   const auth = useAuthStore();
@@ -30,46 +44,6 @@ const NavBar = () => {
 
   useEffect(() => {
     let mounted = true;
-
-    // --- E-POSTA DOĞRULAMA YAKALAYICI (YENİ EKLENDİ) ---
-    const checkEmailVerification = async () => {
-      if (typeof window === "undefined") return;
-
-      // URL'deki hash yapısını kontrol ediyoruz (#/auth/confirm-verification/TOKEN)
-      const hash = window.location.hash;
-      if (hash.includes("auth/confirm-verification/")) {
-        // Sondaki token kodunu ayıklıyoruz
-        const token = hash.split("auth/confirm-verification/")[1];
-
-        if (token) {
-          // Sayfa üzerindeki PocketBase yönlendirme hash'ini temizliyoruz (Kullanıcı anlamasın)
-          window.location.hash = "";
-          
-          const loadingToast = toast.loading("E-posta adresiniz doğrulanıyor...");
-
-          try {
-            // PocketBase API'sine token'ı göndererek doğrulamayı tamamlıyoruz
-            await pb.collection("users").confirmVerification(token);
-            
-            if (!mounted) return;
-            toast.dismiss(loadingToast);
-            
-            // Başarılı Mesajı
-            toast.success("E-posta adresiniz başarıyla doğrulandı! Giriş yapabilirsiniz.", {
-              duration: 5000,
-            });
-          } catch (error) {
-            if (!mounted) return;
-            toast.dismiss(loadingToast);
-            
-            // Başarısız/Hata Mesajı
-            toast.error("Doğrulama başarısız. Link geçersiz veya süresi dolmuş olabilir.", {
-              duration: 5000,
-            });
-          }
-        }
-      }
-    };
 
     const forceLogout = (showToast = true) => {
       try {
@@ -143,8 +117,6 @@ const NavBar = () => {
       }
     });
 
-    // Fonksiyonları sırayla çalıştır
-    checkEmailVerification();
     refreshAuth();
 
     return () => {
