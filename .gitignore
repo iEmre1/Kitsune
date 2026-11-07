@@ -57,4 +57,4 @@ companion/*.icns
 .env.development
 
 .vscode/sftp.json
-hooks/
+/hooks/
