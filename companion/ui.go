@@ -1,9 +1,12 @@
 package main
 
 import (
+	"crypto/sha256"
 	_ "embed"
 	"encoding/json"
+	"fmt"
 	"net/http"
+	"strings"
 	"time"
 )
 
@@ -14,7 +17,12 @@ var iconPNG []byte
 
 func (s *CompanionState) handleIcon(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "image/png")
-	w.Header().Set("Cache-Control", "public, max-age=86400")
+	// The icon is embedded in the binary, so it only changes when the companion
+	// is rebuilt. Avoid a long-lived browser cache that would keep showing the
+	// previous logo after an update.
+	w.Header().Set("Cache-Control", "no-store, no-cache, must-revalidate")
+	w.Header().Set("Pragma", "no-cache")
+	w.Header().Set("Expires", "0")
 	w.WriteHeader(http.StatusOK)
 	_, _ = w.Write(iconPNG)
 }
@@ -96,7 +104,7 @@ const dashboardHTML = `<!DOCTYPE html>
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<link rel="icon" type="image/png" href="/icon.png" />
+<link rel="icon" type="image/png" href="/icon.png?v=__ICON_VERSION__" />
 <title>Kitsune Companion</title>
 <style>
   :root {
@@ -229,7 +237,7 @@ const dashboardHTML = `<!DOCTYPE html>
   <div class="card">
     <div class="header">
       <div class="brand">
-        <img src="/icon.png" class="logo-img" alt="Kitsune" />
+        <img src="/icon.png?v=__ICON_VERSION__" class="logo-img" alt="Kitsune" />
         <span class="title">Kitsune Companion</span>
       </div>
       <span id="status-badge" class="badge running">
@@ -334,5 +342,10 @@ func (s *CompanionState) handleUI(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	w.WriteHeader(http.StatusOK)
-	_, _ = w.Write([]byte(dashboardHTML))
+	// Tie the icon URL to the embedded bytes so a rebuilt companion never
+	// reuses a favicon that the browser cached for an older build.
+	sum := sha256.Sum256(iconPNG)
+	iconVersion := fmt.Sprintf("%x", sum)[:12]
+	html := strings.ReplaceAll(dashboardHTML, "__ICON_VERSION__", iconVersion)
+	_, _ = w.Write([]byte(html))
 }

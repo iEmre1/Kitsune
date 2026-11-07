@@ -8,7 +8,9 @@ import Container from "./container";
 import { Separator } from "./ui/separator";
 
 import { nightTokyo } from "@/utils/fonts";
+import { fredoka } from "@/utils/fonts"; 
 import { ROUTES } from "@/constants/routes";
+import { ICON_URL } from "@/constants/assets";
 import React, { ReactNode, useEffect, useState } from "react";
 
 import SearchBar from "./search-bar";
@@ -48,20 +50,28 @@ const NavBar = () => {
     const forceLogout = (showToast = true) => {
       try {
         pb.authStore.clear();
-      } catch { }
+      } catch {
+        // Storage may be unavailable; continue with the remaining cleanup.
+      }
       try {
         localStorage.removeItem("pocketbase_auth");
         localStorage.removeItem("pb_auth");
-      } catch { }
+      } catch {
+        // Ignore storage errors.
+      }
       try {
         useAuthStore.getState().clearAuth();
-      } catch { }
+      } catch {
+        // Ignore store errors.
+      }
       if (mounted && showToast) {
         try {
           toast.error("Giriş oturumu sona erdi.", {
             style: { background: "red" },
           });
-        } catch { }
+        } catch {
+          // Toast is non-critical.
+        }
       }
     };
 
@@ -140,14 +150,16 @@ const NavBar = () => {
           href={ROUTES.HOME}
           className="flex items-center gap-1 cursor-pointer"
         >
-          <Image src="/icon.png" alt="logo" width={70} height={70} />
+          <Image src={ICON_URL} alt="logo" width={70} height={70} unoptimized />
           <h1
             className={cn([
-              nightTokyo.className,
-              "text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-gray-200 to-pink-600 tracking-widest",
+              fredoka.className,
+              "text-4xl font-bold tracking-wide uppercase flex items-center",
             ])}
           >
-            Animke
+            <span className="text-gray-200">Anim</span>
+            
+            <span className="text-pink-500">ke</span>
           </h1>
         </Link>
 

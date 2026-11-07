@@ -45,21 +45,23 @@ export async function getPocketBaseEpisodeSeasons(
   if (!Number.isSafeInteger(id) || id <= 0) return [];
 
   const { episodes: records } = await fetchAnimeEpisodesFromPB(id);
-  const seasons = Array.from(
+  const seasonNumbers = Array.from(
     new Set(
       records
         .map((record) => Number(record.season_number))
         .filter((season) => Number.isSafeInteger(season) && season > 0),
     ),
   ).sort((left, right) => left - right);
-
-  return seasons.length ? seasons : records.length ? [1] : [];
+  return seasonNumbers;
 }
 
 export async function fetchAnimeEpisodesFromPB(
   anilistId: string | number,
   seasonNumber?: number,
-): Promise<{ animeRecords: Record<string, any>[]; episodes: PBEpisodeRecord[] }> {
+): Promise<{
+  animeRecords: Record<string, any>[];
+  episodes: PBEpisodeRecord[];
+}> {
   const id = Number(anilistId);
   if (!Number.isSafeInteger(id) || id <= 0) {
     return { animeRecords: [], episodes: [] };

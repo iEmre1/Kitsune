@@ -8,7 +8,7 @@ const KitsunePlayer = dynamic(() => import("@/components/kitsune-player"), {
   ssr: false,
 });
 import { useGetEpisodeData } from "@/query/get-episode-data";
-import { Captions, Mic, AlertCircle, Server } from "lucide-react";
+import { AlertCircle, Bug, Captions, Mic, Server } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -16,6 +16,8 @@ import { Switch } from "@/components/ui/switch";
 
 import { useGetAllEpisodes } from "@/query/get-all-episodes";
 import { useGetSourceAvailable } from "@/query/get-source-available";
+import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
+import { toast } from "sonner";
 
 const VideoPlayerSection = () => {
   const searchParams = useSearchParams();
@@ -27,6 +29,11 @@ const VideoPlayerSection = () => {
   const { selectedEpisode, setSelectedEpisode, anime } = useAnimeStore();
 
   const { data: isSourceAvailable } = useGetSourceAvailable();
+  const { confirm, dialog: confirmDialog } = useConfirmDialog({
+    title: "Hata bildirilsin mi?",
+    description: "Bu bölüm ve oynatma kaynağıyla ilgili hata Discord'a gönderilecek.",
+  });
+  const [isSubmittingReport, setIsSubmittingReport] = useState(false);
   const { data: allEpisodesData, isLoading: isLoadingEpisodes } =
     useGetAllEpisodes(animeIdParam, seriesAnimeIdParam, seasonNumberParam);
 
@@ -376,6 +383,35 @@ const VideoPlayerSection = () => {
     }
   };
 
+  const handleReportError = async () => {
+    const confirmed = await confirm();
+    if (!confirmed || isSubmittingReport) return;
+
+    setIsSubmittingReport(true);
+    try {
+      const response = await fetch("/api/reports/discord", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          animeId: animeIdParam || anime?.anime?.info?.id,
+          animeTitle: anime?.anime?.info?.name,
+          episodeNumber: currentEpNumber,
+          seasonNumber: seasonNumberParam,
+          provider: activePbFansubLocal?.displayName || currentProviderName,
+          source: selectedPbSourceId || episodeData?.sources?.[0]?.server,
+          pageUrl: window.location.href,
+        }),
+      });
+
+      if (!response.ok) throw new Error("report_failed");
+      toast.success("Hata bildiriminiz gönderildi. Teşekkürler.");
+    } catch {
+      toast.error("Hata bildirimi gönderilemedi. Lütfen daha sonra tekrar deneyin.");
+    } finally {
+      setIsSubmittingReport(false);
+    }
+  };
+
   if (isLoadingEpisodes || (isLoadingData && !useFallback)) {
     return (
       <div className="h-auto aspect-video lg:max-h-[calc(100vh-150px)] min-h-[20vh] sm:min-h-[30vh] md:min-h-[40vh] lg:min-h-[60vh] w-full animate-pulse bg-slate-800 rounded-xl"></div>
@@ -457,7 +493,19 @@ const VideoPlayerSection = () => {
         />
       )}
 
-      <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full p-5 bg-[#0f172a] border border-slate-800 rounded-xl">
+      <div className="relative flex flex-col md:flex-row items-start md:items-center justify-between gap-4 w-full p-5 pt-14 md:pt-5 bg-[#0f172a] border border-slate-800 rounded-xl">
+        <Button
+          type="button"
+          variant="outline"
+          size="sm"
+          disabled={isSubmittingReport}
+          onClick={() => void handleReportError()}
+          className="absolute right-4 top-4 h-8 gap-1.5 border-amber-700/70 bg-transparent px-2.5 text-xs text-amber-300 hover:bg-amber-950/40 hover:text-amber-200"
+          title="Bu bölümdeki oynatma hatasını bildir"
+        >
+          <Bug className="h-3.5 w-3.5" />
+          {isSubmittingReport ? "Gönderiliyor..." : "Hata Bildir"}
+        </Button>
         <div className="flex flex-col gap-3 w-full md:w-auto">
           {pbFansubs.length > 0 && (
             <div className="flex flex-col gap-2">
@@ -467,7 +515,7 @@ const VideoPlayerSection = () => {
               <div className="flex flex-wrap items-center gap-2.5">
                 <Captions className="text-red-400 h-4 w-4 shrink-0" />
                 <p className="font-bold text-xs text-gray-300 tracking-wider">
-                  SUNUCULAR (FANSUBLAR):
+                    ÇEVİRMENLER (FANSUBLAR):
                 </p>
                 {pbFansubs.map((f: any) => {
                   const isActive = activePbFansubLocal?.id === f.id;
@@ -645,6 +693,7 @@ const VideoPlayerSection = () => {
           </AlertDescription>
         </Alert>
       )}
+      {confirmDialog}
     </div>
   );
 };

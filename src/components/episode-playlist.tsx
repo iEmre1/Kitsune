@@ -7,7 +7,6 @@ import { useSearchParams } from "next/navigation";
 import { useAnimeStore } from "@/store/anime-store";
 import { Episode, IEpisodes } from "@/types/episodes";
 import Select, { ISelectOptions } from "./common/select";
-import { Input } from "./ui/input";
 import { Bookmark } from "@/hooks/use-get-bookmark";
 import { useGetAnimeSeasons } from "@/query/get-anime-seasons";
 import { useRouter } from "next/navigation";
@@ -37,7 +36,6 @@ const EpisodePlaylist = ({
   const searchParams = useSearchParams();
   const router = useRouter();
   const { data: seasons = [] } = useGetAnimeSeasons(animeId);
-
   const episodeId = searchParams.get("episode");
 
   const isLatestEpisode = searchParams.get("type");
@@ -50,7 +48,6 @@ const EpisodePlaylist = ({
   const [currentGroup, setCurrentGroup] = useState(
     `1 - ${Math.min(50, episodes?.totalEpisodes!)}`,
   );
-  const [search, setSearch] = useState("");
 
   const [start, end] = currentGroup.split(" - ").map(Number);
   const filtered = episodes.episodes.filter((_, index) => {
@@ -63,7 +60,6 @@ const EpisodePlaylist = ({
   useEffect(() => {
     const end = Math.min(50, episodes?.totalEpisodes || 0);
     setCurrentGroup(`1 - ${end}`);
-    setSearch("");
     setFilteredEpisodes(episodes?.episodes.slice(0, 50) || []);
     if (scrollContainerRef.current) scrollContainerRef.current.scrollTop = 0;
   }, [episodes]);
@@ -125,28 +121,6 @@ const EpisodePlaylist = ({
     //eslint-disable-next-line
   }, [animeId, episodes]);
 
-  const handleOnSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (!episodes) return;
-    const value = e.target.value;
-    setSearch(value);
-
-    if (!value) {
-      // check if group is selected and filter based on that
-      const [start, end] = currentGroup.split(" - ").map(Number);
-      const filtered = episodes.episodes.filter((_, index) => {
-        return index >= start - 1 && index <= end - 1;
-      });
-      setFilteredEpisodes(filtered);
-      return;
-    }
-
-    const filtered = episodes?.episodes.filter((episode) =>
-      episode.number.toString().toLowerCase().includes(value.toLowerCase()),
-    );
-
-    setFilteredEpisodes(filtered);
-  };
-
   const handleOnSelectChange = (range: string) => {
     setCurrentGroup(range);
     if (scrollContainerRef.current) {
@@ -197,12 +171,6 @@ const EpisodePlaylist = ({
                 className="w-[105px] shrink-0"
               />
             )}
-            <Input
-              placeholder="Bölüm Ara"
-              value={search}
-              onChange={handleOnSearchChange}
-              className="min-w-0 flex-1"
-            />
             <Select
               value={currentGroup}
               placeholder={currentGroup}

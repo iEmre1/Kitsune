@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useRef } from "react";
+import React, { useRef, useState } from "react";
 import Container from "@/components/container";
 import Avatar from "@/components/common/avatar";
 import { useAuthStore } from "@/store/auth-store";
@@ -15,12 +15,14 @@ import ActivityProgression from "./components/activity-progression";
 import Loading from "@/app/loading";
 import AnilistImport from "./components/anilist-import";
 import { useQuery } from "@tanstack/react-query";
-import { Camera, UserX } from "lucide-react";
+import { Camera, ImagePlus, UserX } from "lucide-react";
+import { prepareProfileImage } from "@/lib/profile-image";
 
 export type TargetProfileUser = {
   id: string;
   username: string;
   avatar: string;
+  background?: string;
   collectionId: string;
   collectionName: string;
   created: string;
@@ -33,6 +35,8 @@ function ProfilePage() {
 
   const { auth, setAuth } = useAuthStore();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const backgroundInputRef = useRef<HTMLInputElement>(null);
+  const [backgroundUrl, setBackgroundUrl] = useState<string | null>(null);
 
   // Fetch target user profile by username
   const {
@@ -52,6 +56,7 @@ function ProfilePage() {
         id: record.id,
         username: record.username,
         avatar: record.avatar,
+        background: record.background,
         collectionId: record.collectionId,
         collectionName: record.collectionName,
         created: record.created,
@@ -71,8 +76,14 @@ function ProfilePage() {
     const file = event.target.files?.[0];
     if (file) {
       try {
+        const optimizedFile = await prepareProfileImage(file, {
+          maxWidth: 512,
+          maxHeight: 512,
+          maxBytes: 1.5 * 1024 * 1024,
+          fileName: "avatar.webp",
+        });
         const res = await pb.collection("users").update(auth.id, {
-          avatar: file,
+          avatar: optimizedFile,
         });
 
         if (res) {
@@ -85,7 +96,45 @@ function ProfilePage() {
         toast.error(err?.message || "Avatar güncellenemedi", {
           style: { background: "red" },
         });
+      } finally {
+        event.target.value = "";
       }
+    }
+  };
+
+  const handleBackgroundChange = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    if (!isOwner || !auth) return;
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    try {
+      const optimizedFile = await prepareProfileImage(file, {
+        maxWidth: 1920,
+        maxHeight: 800,
+        maxBytes: 4 * 1024 * 1024,
+        fileName: "background.webp",
+      });
+      const res = await pb.collection("users").update(auth.id, {
+        background: optimizedFile,
+      });
+      const nextBackground = res.background as string;
+      setBackgroundUrl(
+        nextBackground
+          ? pb.files.getURL(res, nextBackground)
+          : null,
+      );
+      setAuth({ ...auth, background: nextBackground });
+      toast.success("Kapak görseli başarıyla güncellendi", {
+        style: { background: "green" },
+      });
+    } catch (err: any) {
+      toast.error(err?.message || "Kapak görseli güncellenemedi", {
+        style: { background: "red" },
+      });
+    } finally {
+      event.target.value = "";
     }
   };
 
@@ -107,16 +156,45 @@ function ProfilePage() {
 
   return (
     <>
-      <div className="w-full h-48 md:h-64 lg:h-72 relative">
+      <div
+        className={`w-full h-48 md:h-64 lg:h-72 relative overflow-hidden ${
+          isOwner ? "group cursor-pointer" : ""
+        }`}
+        onClick={() => {
+          if (isOwner) backgroundInputRef.current?.click();
+        }}
+      >
         <Image
-          src={CoverImage.src}
+          src={
+            backgroundUrl ||
+            (targetUser.background
+              ? `${process.env.NEXT_PUBLIC_POCKETBASE_URL || "http://localhost:8090"}/api/files/${targetUser.collectionId}/${targetUser.id}/${targetUser.background}`
+              : CoverImage.src)
+          }
           alt="kapak"
           fill
           className="object-cover"
           priority
+          unoptimized
           placeholder="blur"
           blurDataURL={CoverImage.blurDataURL}
         />
+        {isOwner && (
+          <div className="absolute inset-0 z-10 flex cursor-pointer select-none flex-col items-center justify-center bg-black/60 p-2 text-center text-white opacity-0 backdrop-blur-xs transition-opacity group-hover:opacity-100">
+            <ImagePlus className="mb-1 h-8 w-8 animate-bounce text-white drop-shadow-md" />
+            <span className="text-xs font-bold tracking-wide">Background Değiştir</span>
+          </div>
+        )}
+        {isOwner && (
+          <input
+            type="file"
+            ref={backgroundInputRef}
+            accept="image/*"
+            onChange={handleBackgroundChange}
+            onClick={(event) => event.stopPropagation()}
+            className="hidden"
+          />
+        )}
       </div>
 
       <Container className="min-h-[70vh] mt-10 flex flex-col md:flex-row justify-around gap-8 md:gap-4">

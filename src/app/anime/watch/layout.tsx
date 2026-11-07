@@ -145,6 +145,27 @@ const Layout = (props: Props) => {
     seriesAnimeId,
     seasonNumber,
   );
+  const displaySeasonNumber = seasonNumber || episodes?.seasonNumber || 1;
+  const displayEpisodeNumber =
+    episodes?.episodes.find((episode) => episode.number === currentEpNum)?.number ||
+    currentEpNum ||
+    1;
+  const watchPageTitle = anime?.anime.info.name
+    ? `${anime.anime.info.name} - Sezon ${displaySeasonNumber} - Bölüm ${displayEpisodeNumber}`
+    : "Animke | Anime İzle";
+
+  useEffect(() => {
+    if (!anime?.anime.info.name) return;
+
+    document.title = watchPageTitle;
+    const timer = window.setTimeout(() => {
+      document.title = watchPageTitle;
+    }, 0);
+
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [anime?.anime.info.name, watchPageTitle]);
 
   // Auto-resolve episode ID if only episode number (ep) is in query or if no episode parameter exists
   useEffect(() => {
@@ -187,6 +208,9 @@ const Layout = (props: Props) => {
       <Container className="mt-[6.5rem] space-y-10 pb-20">
         <div className="grid lg:grid-cols-4 grid-cols-1 gap-y-5 gap-x-10 h-auto w-full">
           <div className="lg:col-span-3 col-span-1 lg:mb-0">
+            <h1 className="mb-4 text-xl font-bold text-white md:text-2xl">
+              {anime.anime.info.name} - Sezon {displaySeasonNumber} - Bölüm {displayEpisodeNumber}
+            </h1>
             {props.children}
           </div>
           {episodes && (

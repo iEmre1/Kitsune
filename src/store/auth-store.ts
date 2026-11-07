@@ -5,6 +5,7 @@ import { persist } from "zustand/middleware";
 export type IAuth = {
   id: string;
   avatar: string;
+  background?: string;
   email: string;
   username: string;
   collectionId: string;

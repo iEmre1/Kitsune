@@ -55,3 +55,6 @@ companion/*.icns
 .env
 .env.production
 .env.development
+
+.vscode/sftp.json
+hooks/verification.pb.js

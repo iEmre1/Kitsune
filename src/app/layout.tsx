@@ -6,6 +6,7 @@ import NavBar from "@/components/navbar";
 import Footer from "@/components/footer";
 import GoogleAnalytics from "@/components/google-analytics";
 import QueryProvider from "@/providers/query-provider";
+import { ICON_VERSION } from "@/constants/assets";
 
 import { ThemeProvider } from "@/components/theme-provider";
 
@@ -24,7 +25,7 @@ const geistSans = localFont({
 
 const APP_NAME = "Animke";
 const APP_DEFAULT_TITLE = "Animke | Anime İzle";
-const APP_DESCRIPTION = "Favori anime dizilerinizi kolayca ve reklamsız izleyin";
+const APP_DESCRIPTION = "Favori animelerinizii kolayca ve reklamsız izleyin";
 
 export const metadata: Metadata = {
   applicationName: APP_NAME,
@@ -35,7 +36,7 @@ export const metadata: Metadata = {
     statusBarStyle: "default",
     title: APP_DEFAULT_TITLE,
   },
-  manifest: "/manifest.json",
+  manifest: `/manifest.json?v=${ICON_VERSION}`,
   formatDetection: {
     telephone: false,
   },
@@ -60,7 +61,30 @@ export default function RootLayout({
   return (
     <html lang="tr" suppressHydrationWarning>
       <head>
-        <link rel="icon" href="/icon.png" type="image/png" sizes="192x192" />
+        <link rel="icon" href={`/favicon.ico?v=${ICON_VERSION}`} sizes="any" />
+        <link
+          rel="icon"
+          href={`/favicon-32x32.png?v=${ICON_VERSION}`}
+          type="image/png"
+          sizes="32x32"
+        />
+        <link
+          rel="icon"
+          href={`/favicon-16x16.png?v=${ICON_VERSION}`}
+          type="image/png"
+          sizes="16x16"
+        />
+        <link
+          rel="icon"
+          href={`/icon-192x192.png?v=${ICON_VERSION}`}
+          type="image/png"
+          sizes="192x192"
+        />
+        <link
+          rel="apple-touch-icon"
+          href={`/apple-touch-icon.png?v=${ICON_VERSION}`}
+          sizes="180x180"
+        />
       </head>
       <body
         className={`${geistSans.className} antialiased max-w-[100vw] overflow-x-hidden`}
