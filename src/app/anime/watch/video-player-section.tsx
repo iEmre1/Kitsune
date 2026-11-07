@@ -17,6 +17,7 @@ import { Switch } from "@/components/ui/switch";
 import { useGetAllEpisodes } from "@/query/get-all-episodes";
 import { useGetSourceAvailable } from "@/query/get-source-available";
 import { useConfirmDialog } from "@/hooks/use-confirm-dialog";
+import { useIframeWatchTracking } from "@/hooks/use-iframe-watch-tracking";
 import { toast } from "sonner";
 
 const VideoPlayerSection = () => {
@@ -277,6 +278,17 @@ const VideoPlayerSection = () => {
     (Number.isFinite(parsedEpFromSlug) && parsedEpFromSlug > 0
       ? parsedEpFromSlug
       : Number(epParam) || 1);
+
+  // PocketBase/embedded players cannot expose playback time, so mark the
+  // episode once the viewer has kept it visible long enough.
+  useIframeWatchTracking({
+    active: Boolean(pbPlayerUrl),
+    animeId: String(animeIdParam || anime?.anime?.info?.id || ""),
+    animeTitle: anime?.anime?.info?.name || "Anime",
+    animePoster: anime?.anime?.info?.poster || "",
+    episodeId: activeEpisodeId,
+    episodeNumber: currentEpNumber,
+  });
 
   // Reset failed providers when switching to a different episode number
   useEffect(() => {

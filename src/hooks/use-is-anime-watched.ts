@@ -1,6 +1,12 @@
 import { useState, useEffect } from "react";
-import { IWatchedAnime } from "@/types/watched-anime";
 import { WatchHistory } from "./use-get-bookmark";
+import { useAuthStore } from "@/store/auth-store";
+import { pb } from "@/lib/pocketbase";
+import {
+  isLocalAnimeWatched,
+  isLocalEpisodeWatched,
+  LOCAL_WATCH_HISTORY_EVENT,
+} from "@/lib/local-watch-history";
 
 export const useHasAnimeWatched = (
   animeId: string,
@@ -8,45 +14,60 @@ export const useHasAnimeWatched = (
   watchedEpisodes?: WatchHistory[],
   episodeNumber?: number,
 ) => {
-  const [hasWatchedAnime, setHasWatchedAnime] = useState(false);
-  const [hasWatchedEpisode, setHasWatchedEpisode] = useState(false);
+  const { auth } = useAuthStore();
+  const isAuthenticated = Boolean(auth?.id || pb.authStore.record?.id);
+  const [localState, setLocalState] = useState({
+    hasWatchedAnime: false,
+    hasWatchedEpisode: false,
+  });
 
   useEffect(() => {
-    const watchedDetails: Array<IWatchedAnime> =
-      JSON.parse(localStorage.getItem("watched") as string) || [];
+    if (isAuthenticated || typeof window === "undefined") return;
 
-    if (!Array.isArray(watchedDetails)) {
-      localStorage.removeItem("watched");
-      return;
-    }
+    const syncFromLocalStorage = () => {
+      setLocalState({
+        hasWatchedAnime: isLocalAnimeWatched(animeId),
+        hasWatchedEpisode: isLocalEpisodeWatched(
+          animeId,
+          episodeId,
+          episodeNumber,
+        ),
+      });
+    };
 
-    const anime = watchedDetails.find(
-      (watchedAnime) => watchedAnime.anime.id === animeId,
+    syncFromLocalStorage();
+    window.addEventListener("storage", syncFromLocalStorage);
+    window.addEventListener(
+      LOCAL_WATCH_HISTORY_EVENT,
+      syncFromLocalStorage,
     );
 
-    if (anime) {
-      setHasWatchedAnime(true); // Anime has been watched
-      if (episodeId) {
-        const episodeWatched = anime.episodes.includes(episodeId);
-        setHasWatchedEpisode(episodeWatched); // Set to true if the episode is watched
-      }
-    } else {
-      setHasWatchedAnime(false); // Anime has not been watched
-      setHasWatchedEpisode(false); // Episode has not been watched
-    }
-  }, [animeId, episodeId]);
-
-  if (watchedEpisodes && watchedEpisodes.length > 0) {
-    if (episodeId || episodeNumber !== undefined) {
-      const episodeWatched = watchedEpisodes.some(
-        (episode) =>
-          (episodeId && episode.episodeId === episodeId) ||
-          (episodeNumber !== undefined &&
-            Number(episode.episodeNumber) === Number(episodeNumber)),
+    return () => {
+      window.removeEventListener("storage", syncFromLocalStorage);
+      window.removeEventListener(
+        LOCAL_WATCH_HISTORY_EVENT,
+        syncFromLocalStorage,
       );
-      return { hasWatchedAnime: true, hasWatchedEpisode: episodeWatched };
-    }
+    };
+  }, [animeId, episodeId, episodeNumber, isAuthenticated]);
+
+  // Signed-in users always read from the database-backed bookmark history.
+  if (isAuthenticated) {
+    const hasWatchedAnime = Boolean(watchedEpisodes?.length);
+    const hasWatchedEpisode =
+      hasWatchedAnime &&
+      (episodeId !== undefined || episodeNumber !== undefined) &&
+      Boolean(
+        watchedEpisodes?.some(
+          (episode) =>
+            (episodeId !== undefined && episode.episodeId === episodeId) ||
+            (episodeNumber !== undefined &&
+              Number(episode.episodeNumber) === Number(episodeNumber)),
+        ),
+      );
+
+    return { hasWatchedAnime, hasWatchedEpisode };
   }
 
-  return { hasWatchedAnime, hasWatchedEpisode };
+  return localState;
 };

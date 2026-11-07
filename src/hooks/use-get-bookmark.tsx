@@ -254,6 +254,15 @@ function useBookMarks({
               "Error updating bookmark with new watch record:",
               error,
             );
+            // Do not leave an orphaned watch record behind when the relation
+            // update fails; otherwise it can never be reached by any user.
+            try {
+              await pb
+                .collection("watched")
+                .delete(newWatchedRecord.id, { requestKey: null });
+            } catch {
+              // Ignore cleanup failures.
+            }
             return null;
           }
         }
@@ -265,10 +274,82 @@ function useBookMarks({
     [auth?.id, queryClient],
   );
 
+  const markEpisodeWatched = useCallback(
+    async (
+      bookmarkId: string | null,
+      episodeData: { episodeId?: string; episodeNumber: number },
+    ): Promise<string | null> => {
+      const isAuthenticated = pb.authStore.isValid || Boolean(auth?.id);
+      if (!isAuthenticated || !bookmarkId) return null;
+
+      try {
+        const bookmarkRecord = await pb
+          .collection<Bookmark>("bookmarks")
+          .getOne(bookmarkId, {
+            expand: "watchHistory",
+            requestKey: null,
+          });
+
+        const existingEpRecord = (
+          bookmarkRecord.expand?.watchHistory || []
+        ).find(
+          (w) =>
+            (!!episodeData.episodeId && w.episodeId === episodeData.episodeId) ||
+            Number(w.episodeNumber) === Number(episodeData.episodeNumber),
+        );
+
+        if (existingEpRecord) {
+          return existingEpRecord.id;
+        }
+
+        const newWatchedRecord = await pb
+          .collection("watched")
+          .create(
+            {
+              episodeNumber: episodeData.episodeNumber,
+              ...(episodeData.episodeId
+                ? { episodeId: episodeData.episodeId }
+                : {}),
+            },
+            { requestKey: null },
+          );
+
+        try {
+          await pb.collection("bookmarks").update(
+            bookmarkId,
+            { "watchHistory+": newWatchedRecord.id },
+            { requestKey: null },
+          );
+        } catch (error) {
+          console.error(
+            "Error linking watched record to bookmark:",
+            error,
+          );
+          try {
+            await pb
+              .collection("watched")
+              .delete(newWatchedRecord.id, { requestKey: null });
+          } catch {
+            // Ignore cleanup failures.
+          }
+          return null;
+        }
+
+        queryClient.invalidateQueries({ queryKey: [GET_BOOKMARKS_KEY] });
+        return newWatchedRecord.id;
+      } catch (error) {
+        console.error("Error marking episode watched:", error);
+        return null;
+      }
+    },
+    [auth?.id, queryClient],
+  );
+
   return {
     bookmarks,
     syncWatchProgress,
     createOrUpdateBookMark,
+    markEpisodeWatched,
     totalPages,
     isLoading,
   };

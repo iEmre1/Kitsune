@@ -4,7 +4,6 @@ import Button from "./common/custom-button";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "./ui/tabs";
 import { Input } from "./ui/input";
 import DiscordIcon from "@/icons/discord";
-import GoogleIcon from "@/icons/google";
 import { pb } from "@/lib/pocketbase";
 import { toast } from "sonner";
 import { useAuthStore } from "@/store/auth-store";
@@ -15,6 +14,80 @@ type FormData = {
   password: string;
   confirm_password: string;
 };
+
+const fieldNames: Record<string, string> = {
+  username: "Kullanıcı adı",
+  email: "E-posta",
+  password: "Şifre",
+  passwordConfirm: "Şifre tekrarı",
+};
+
+// Alana özel açıklayıcı hata mesajları: fieldErrors[alan][hata_kodu]
+const fieldErrors: Record<string, Record<string, string>> = {
+  username: {
+    validation_not_unique:
+      "Bu kullanıcı adı zaten alınmış. Lütfen farklı bir kullanıcı adı seçin.",
+    validation_required: "Kullanıcı adı boş bırakılamaz.",
+    validation_min_text_constraint:
+      "Kullanıcı adı çok kısa. En az 3 karakter olmalı.",
+    validation_max_text_constraint:
+      "Kullanıcı adı çok uzun. Daha kısa bir kullanıcı adı seçin.",
+    validation_length_out_of_range:
+      "Kullanıcı adı uzunluğu geçersiz. 3 ile 150 karakter arasında olmalı.",
+    validation_invalid_username:
+      "Kullanıcı adı geçersiz karakterler içeriyor. Sadece harf, rakam ve alt çizgi kullanın.",
+    validation_match_invalid:
+      "Kullanıcı adı geçersiz karakterler içeriyor. Sadece harf, rakam ve alt çizgi kullanın.",
+  },
+  email: {
+    validation_not_unique:
+      "Bu e-posta adresiyle zaten bir hesap var. Giriş yapmayı deneyin ya da farklı bir e-posta kullanın.",
+    validation_required: "E-posta adresi boş bırakılamaz.",
+    validation_is_email:
+      "Geçerli bir e-posta adresi girin. Örnek: isim@ornek.com",
+    validation_invalid_email:
+      "Geçerli bir e-posta adresi girin. Örnek: isim@ornek.com",
+    validation_invalid_value:
+      "Bu e-posta adresi kabul edilmiyor. Lütfen başka bir e-posta deneyin.",
+  },
+  password: {
+    validation_required: "Şifre boş bırakılamaz.",
+    validation_min_text_constraint:
+      "Şifre çok kısa. En az 8 karakter olmalı.",
+    validation_length_out_of_range:
+      "Şifre uzunluğu geçersiz. En az 8 karakter olmalı.",
+    validation_max_text_constraint:
+      "Şifre çok uzun. Daha kısa bir şifre seçin.",
+  },
+  passwordConfirm: {
+    validation_required: "Şifre tekrarı boş bırakılamaz.",
+    validation_values_mismatch:
+      "Şifreler birbiriyle eşleşmiyor. İki alana aynı şifreyi girdiğinizden emin olun.",
+  },
+};
+
+// Alana özel mesaj bulunamazsa kullanılan genel mesajlar
+const genericErrors: Record<string, string> = {
+  validation_not_unique: "zaten kullanımda. Lütfen farklı bir değer girin.",
+  validation_required: "boş bırakılamaz.",
+  validation_invalid_email: "geçerli bir e-posta adresi değil.",
+  validation_is_email: "geçerli bir e-posta adresi değil.",
+  validation_values_mismatch: "değerler eşleşmiyor.",
+  validation_min_text_constraint: "çok kısa.",
+  validation_max_text_constraint: "çok uzun.",
+  validation_length_out_of_range: "uzunluğu geçersiz.",
+};
+
+function getSignupErrorMessage(field: string, code?: string): string {
+  if (code && fieldErrors[field]?.[code]) {
+    return fieldErrors[field][code];
+  }
+  const name = fieldNames[field] ?? field;
+  if (code && genericErrors[code]) {
+    return `${name} ${genericErrors[code]}`;
+  }
+  return `${name} alanında geçersiz bir değer var. Lütfen kontrol edip tekrar deneyin.`;
+}
 
 function LoginPopoverButton() {
   const auth = useAuthStore();
@@ -29,9 +102,10 @@ function LoginPopoverButton() {
   const loginWithEmail = async () => {
     try {
       if (formData.username === "" || formData.password === "") {
-        toast.error("Lütfen tüm alanları doldurun", {
-          style: { background: "red" },
-        });
+        toast.error(
+          "E-posta/kullanıcı adı ve şifre alanlarının ikisini de doldurmanız gerekiyor.",
+          { style: { background: "red" } }
+        );
         return;
       }
 
@@ -53,12 +127,24 @@ function LoginPopoverButton() {
           created: pb.authStore.record.created,
         });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Login error:", e);
-      toast.error(
-        "Giriş başarısız. Bilgilerinizi kontrol edin veya e-postanızı doğrulayın.",
-        { style: { background: "red" } }
-      );
+
+      if (e?.status === 0) {
+        toast.error(
+          "Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.",
+          { style: { background: "red" }, duration: 6000 }
+        );
+      } else if (e?.status === 400) {
+        toast.error(
+          "E-posta/kullanıcı adı veya şifre hatalı. Bilgilerinizi kontrol edin. Yeni kayıt olduysanız e-postanıza gelen doğrulama bağlantısına tıklayarak hesabınızı doğrulamış olmanız gerekir.",
+          { style: { background: "red" }, duration: 8000 }
+        );
+      } else {
+        toast.error("Giriş yapılamadı. Lütfen biraz sonra tekrar deneyin.", {
+          style: { background: "red" },
+        });
+      }
     }
   };
 
@@ -69,7 +155,22 @@ function LoginPopoverButton() {
       formData.email === "" ||
       formData.confirm_password === ""
     ) {
-      toast.error("Lütfen tüm alanları doldurun", {
+      toast.error("Kayıt olmak için tüm alanları doldurmanız gerekiyor.", {
+        style: { background: "red" },
+      });
+      return;
+    }
+
+    if (formData.password !== formData.confirm_password) {
+      toast.error(
+        "Şifreler birbiriyle eşleşmiyor. İki alana aynı şifreyi girdiğinizden emin olun.",
+        { style: { background: "red" }, duration: 6000 }
+      );
+      return;
+    }
+
+    if (formData.password.length < 8) {
+      toast.error("Şifre çok kısa. En az 8 karakter olmalı.", {
         style: { background: "red" },
       });
       return;
@@ -87,29 +188,43 @@ function LoginPopoverButton() {
         try {
           await pb.collection("users").requestVerification(formData.email);
           toast.success(
-            "Hesap oluşturuldu. Lütfen e-postanıza gelen doğrulama bağlantısına tıklayıp hesabınızı doğrulayın, ardından hesaba giriş yapın.",
-            { style: { background: "green" } }
+            "Hesabınız oluşturuldu! E-postanıza bir doğrulama bağlantısı gönderdik. Bağlantıya tıklayıp hesabınızı doğruladıktan sonra giriş yapabilirsiniz. Gelen kutusunda göremezseniz spam klasörüne de bakın.",
+            { style: { background: "green" }, duration: 10000 }
           );
         } catch (err) {
           console.error("Verification email error:", err);
-          toast.success("Hesap oluşturuldu. Lütfen giriş yapın.", {
-            style: { background: "green" },
-          });
+          toast.success(
+            "Hesabınız oluşturuldu ancak doğrulama e-postası gönderilemedi. Lütfen giriş yapmayı deneyin.",
+            { style: { background: "green" }, duration: 8000 }
+          );
         }
         clearForm();
         setTabValue("login");
       }
     } catch (e: any) {
-      if (e.response?.data) {
-        for (const key in e.response?.data) {
-          toast.error(`${key}: ${e.response.data[key].message}`, {
+      console.error("Signup error:", e);
+
+      if (e?.status === 0) {
+        toast.error(
+          "Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.",
+          { style: { background: "red" }, duration: 6000 }
+        );
+        return;
+      }
+
+      const data = e?.response?.data;
+      if (data && Object.keys(data).length > 0) {
+        for (const key in data) {
+          toast.error(getSignupErrorMessage(key, data[key]?.code), {
             style: { background: "red" },
+            duration: 7000,
           });
         }
       } else {
-        toast.error("Kayıt başarısız oldu. Lütfen tekrar deneyin.", {
-          style: { background: "red" },
-        });
+        toast.error(
+          "Kayıt işlemi tamamlanamadı. Lütfen bilgilerinizi kontrol edip tekrar deneyin.",
+          { style: { background: "red" } }
+        );
       }
     }
   };
@@ -125,21 +240,11 @@ function LoginPopoverButton() {
 
   const loginWithDiscord = async () => {
     try {
-      const res = await pb.collection("users").authWithOAuth2({
+      await pb.collection("users").authWithOAuth2({
         provider: "discord",
       });
 
       if (pb.authStore.isValid && pb.authStore.record) {
-        if (res.meta?.username && pb.authStore.record.username !== res.meta.username) {
-          try {
-            await pb.collection("users").update(pb.authStore.record.id, {
-              username: res.meta.username,
-            });
-          } catch (e) {
-            // ignore if username update fails
-          }
-        }
-
         toast.success("Giriş başarılı", { style: { background: "green" } });
         auth.setAuth({
           id: pb.authStore.record.id,
@@ -152,48 +257,64 @@ function LoginPopoverButton() {
           created: pb.authStore.record.created,
         });
       }
-    } catch (e) {
+    } catch (e: any) {
       console.error("Discord login error:", e);
-      toast.error("Discord ile giriş başarısız oldu", {
-        style: { background: "red" },
-      });
+
+      const data = e?.response?.data;
+      if (data?.username?.code === "validation_not_unique") {
+        toast.error(
+          "Discord kullanıcı adınız sitede başka bir hesap tarafından kullanılıyor. Lütfen site yöneticisiyle iletişime geçin.",
+          { style: { background: "red" }, duration: 8000 }
+        );
+      } else if (data?.email?.code === "validation_not_unique") {
+        toast.error(
+          "Discord hesabınızın e-posta adresiyle sitede zaten bir hesap var. Önce e-posta ve şifrenizle giriş yapmayı deneyin.",
+          { style: { background: "red" }, duration: 8000 }
+        );
+      } else if (e?.status === 0) {
+        toast.error(
+          "Discord girişi tamamlanamadı. Açılan pencere kapatılmış ya da engellenmiş olabilir. Tarayıcınızın açılır pencere (pop-up) engelleyicisini kontrol edip tekrar deneyin.",
+          { style: { background: "red" }, duration: 8000 }
+        );
+      } else {
+        toast.error(
+          "Discord ile giriş başarısız oldu. Lütfen tekrar deneyin. Sorun devam ederse e-posta ile giriş yapabilirsiniz.",
+          { style: { background: "red" }, duration: 6000 }
+        );
+      }
     }
   };
 
-  const loginWithGoogle = async () => {
+  const forgotPassword = async () => {
+    const email = formData.username.trim();
+
+    if (!email.includes("@")) {
+      toast.error(
+        "Şifrenizi sıfırlamak için yukarıdaki alana e-posta adresinizi yazın, sonra tekrar deneyin.",
+        { style: { background: "red" }, duration: 6000 }
+      );
+      return;
+    }
+
     try {
-      const res = await pb.collection("users").authWithOAuth2({
-        provider: "google",
-      });
-
-      if (pb.authStore.isValid && pb.authStore.record) {
-        if (res.meta?.username && pb.authStore.record.username !== res.meta.username) {
-          try {
-            await pb.collection("users").update(pb.authStore.record.id, {
-              username: res.meta.username,
-            });
-          } catch (e) {
-            // ignore if username update fails
-          }
-        }
-
-        toast.success("Giriş başarılı", { style: { background: "green" } });
-        auth.setAuth({
-          id: pb.authStore.record.id,
-          email: pb.authStore.record.email,
-          username: pb.authStore.record.username,
-          avatar: pb.authStore.record.avatar,
-          collectionId: pb.authStore.record.collectionId,
-          collectionName: pb.authStore.record.collectionName,
-          autoSkip: pb.authStore.record.autoSkip,
-          created: pb.authStore.record.created,
-        });
+      await pb.collection("users").requestPasswordReset(email);
+      toast.success(
+        "Bu e-posta adresiyle kayıtlı bir hesap varsa şifre sıfırlama bağlantısı gönderildi. Gelen kutunuzu ve spam klasörünü kontrol edin.",
+        { style: { background: "green" }, duration: 10000 }
+      );
+    } catch (e: any) {
+      console.error("Password reset request error:", e);
+      if (e?.status === 0) {
+        toast.error(
+          "Sunucuya ulaşılamadı. İnternet bağlantınızı kontrol edip tekrar deneyin.",
+          { style: { background: "red" }, duration: 6000 }
+        );
+      } else {
+        toast.error(
+          "Şifre sıfırlama isteği gönderilemedi. Lütfen biraz sonra tekrar deneyin.",
+          { style: { background: "red" }, duration: 6000 }
+        );
       }
-    } catch (e) {
-      console.error("Google login error:", e);
-      toast.error("Google ile giriş başarısız oldu", {
-        style: { background: "red" },
-      });
     }
   };
 
@@ -258,6 +379,13 @@ function LoginPopoverButton() {
             >
               Giriş Yap
             </Button>
+            <button
+              type="button"
+              onClick={forgotPassword}
+              className="text-xs text-primary hover:underline self-center"
+            >
+              Şifremi unuttum
+            </button>
             <hr className="text-white text-xs text-center" />
             <Button
               variant="default"
@@ -267,15 +395,6 @@ function LoginPopoverButton() {
             >
               <DiscordIcon className="mr-2" />
               Discord ile Giriş Yap
-            </Button>
-            <Button
-              variant="default"
-              className="bg-white hover:bg-gray-200 text-black w-full text-xs"
-              size="sm"
-              onClick={loginWithGoogle}
-            >
-              <GoogleIcon className="mr-2" />
-              Google ile Giriş Yap
             </Button>
           </TabsContent>
           <TabsContent value="signup" className="flex flex-col gap-2">
@@ -341,15 +460,6 @@ function LoginPopoverButton() {
             >
               <DiscordIcon className="mr-2" />
               Discord ile Kayıt Ol
-            </Button>
-            <Button
-              variant="default"
-              className="bg-white hover:bg-gray-200 text-black w-full text-xs"
-              size="sm"
-              onClick={loginWithGoogle}
-            >
-              <GoogleIcon className="mr-2" />
-              Google ile Kayıt Ol
             </Button>
           </TabsContent>
         </Tabs>

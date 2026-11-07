@@ -9,6 +9,11 @@ import { IAnime } from "@/types/anime";
 import { History } from "lucide-react";
 import useBookMarks, { WatchHistory } from "@/hooks/use-get-bookmark";
 import { useAuthStore } from "@/store/auth-store";
+import {
+  getLocalContinueWatching,
+  localRecordToWatchHistory,
+  LOCAL_WATCH_HISTORY_EVENT,
+} from "@/lib/local-watch-history";
 
 type Props = {
   loading: boolean;
@@ -20,57 +25,69 @@ interface WatchedAnime extends IAnime {
 
 const ContinueWatching = (props: Props) => {
   const [anime, setAnime] = useState<WatchedAnime[] | null>(null);
+  const [localRevision, setLocalRevision] = useState(0);
 
   const { auth } = useAuthStore();
   const { bookmarks } = useBookMarks({
     page: 1,
     per_page: 14,
     status: "watching",
+    populate: !!auth,
   });
 
   useEffect(() => {
+    const refreshLocalHistory = () => setLocalRevision((value) => value + 1);
+    window.addEventListener("storage", refreshLocalHistory);
+    window.addEventListener(LOCAL_WATCH_HISTORY_EVENT, refreshLocalHistory);
+    return () => {
+      window.removeEventListener("storage", refreshLocalHistory);
+      window.removeEventListener(
+        LOCAL_WATCH_HISTORY_EVENT,
+        refreshLocalHistory,
+      );
+    };
+  }, []);
+
+  useEffect(() => {
     if (!auth) {
-      if (typeof window !== "undefined") {
-        const storedData = localStorage.getItem("watched");
-        const watchedAnimes: {
-          anime: { id: string; title: string; poster: string };
-          episodes: string[];
-        }[] = storedData ? JSON.parse(storedData) : [];
+      const localItems = getLocalContinueWatching();
+      setAnime(
+        localItems.map(
+          (item) =>
+            ({
+              id: item.animeId,
+              name: item.animeTitle,
+              poster: item.animePoster,
+              episode: localRecordToWatchHistory(item.episode),
+            }) as WatchedAnime,
+        ),
+      );
+      return;
+    }
 
-        if (!Array.isArray(watchedAnimes)) {
-          localStorage.removeItem("watched");
-          return;
-        }
+    if (bookmarks && bookmarks.length > 0) {
+      const animes = bookmarks
+        .map((anime) => {
+          const latestEpisode = anime.expand?.watchHistory
+            ? [...anime.expand.watchHistory].sort(
+                (a, b) => b.episodeNumber - a.episodeNumber,
+              )[0]
+            : null;
 
-        const animes = watchedAnimes.reverse().map((anime) => ({
-          id: anime.anime.id,
-          name: anime.anime.title,
-          poster: anime.anime.poster,
-          episode: anime.episodes[anime.episodes.length - 1],
-        }));
-        setAnime(animes as WatchedAnime[]);
-      }
-    } else {
-      if (bookmarks && bookmarks.length > 0) {
-        const animes = bookmarks
-          .map((anime) => ({
+          return {
             id: anime.animeId,
             name: anime.animeTitle,
             poster: anime.thumbnail,
-            episode: anime.expand?.watchHistory
-              ? anime.expand.watchHistory.sort(
-                  (a, b) => b.episodeNumber - a.episodeNumber,
-                )[0]
-              : null,
-          }))
-          .filter((item) => !!item.episode);
+            episode: latestEpisode,
+          };
+        })
+        .filter((item) => !!item.episode);
 
-        setAnime(animes.length > 0 ? (animes as WatchedAnime[]) : null);
-      } else {
-        setAnime(null);
-      }
+      setAnime(animes.length > 0 ? (animes as WatchedAnime[]) : null);
+    } else {
+      setAnime(null);
     }
-  }, [auth, bookmarks]);
+  }, [auth, bookmarks, localRevision]);
 
   if (props.loading) return <LoadingSkeleton />;
 

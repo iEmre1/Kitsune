@@ -1,26 +1,55 @@
 import { useState, useEffect } from "react";
-import { IWatchedAnime } from "@/types/watched-anime";
+import { WatchHistory } from "./use-get-bookmark";
+import { useAuthStore } from "@/store/auth-store";
+import { pb } from "@/lib/pocketbase";
+import {
+  getLocalLastWatched,
+  LOCAL_WATCH_HISTORY_EVENT,
+} from "@/lib/local-watch-history";
 
-export const useGetLastEpisodeWatched = (animeId: string) => {
-  const [lastEpisodeWatched, setLastEpisodeWatched] = useState<string | null>(
+export const useGetLastEpisodeWatched = (
+  animeId: string,
+  watchedEpisodes?: WatchHistory[] | null,
+) => {
+  const { auth } = useAuthStore();
+  const isAuthenticated = Boolean(auth?.id || pb.authStore.record?.id);
+  const [lastEpisodeWatched, setLastEpisodeWatched] = useState<number | null>(
     null,
   );
 
   useEffect(() => {
-    const watchedDetails: Array<IWatchedAnime> =
-      JSON.parse(localStorage.getItem("watched") as string) || [];
+    if (isAuthenticated) {
+      const latest = watchedEpisodes
+        ? [...watchedEpisodes].sort(
+            (a, b) => b.episodeNumber - a.episodeNumber,
+          )[0]
+        : null;
+      setLastEpisodeWatched(latest ? latest.episodeNumber : null);
+      return;
+    }
 
-    const anime = watchedDetails.find(
-      (watchedAnime) => watchedAnime.anime.id === animeId,
+    if (typeof window === "undefined") return;
+
+    const syncFromLocalStorage = () => {
+      const record = getLocalLastWatched(animeId);
+      setLastEpisodeWatched(record ? record.episodeNumber : null);
+    };
+
+    syncFromLocalStorage();
+    window.addEventListener("storage", syncFromLocalStorage);
+    window.addEventListener(
+      LOCAL_WATCH_HISTORY_EVENT,
+      syncFromLocalStorage,
     );
 
-    if (anime && anime.episodes.length > 0) {
-      const lastWatched = anime.episodes[anime.episodes.length - 1]; // Get the last episode
-      setLastEpisodeWatched(lastWatched);
-    } else {
-      setLastEpisodeWatched(null); // No episodes watched
-    }
-  }, [animeId]);
+    return () => {
+      window.removeEventListener("storage", syncFromLocalStorage);
+      window.removeEventListener(
+        LOCAL_WATCH_HISTORY_EVENT,
+        syncFromLocalStorage,
+      );
+    };
+  }, [animeId, isAuthenticated, watchedEpisodes]);
 
   return lastEpisodeWatched;
 };

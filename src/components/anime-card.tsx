@@ -104,11 +104,16 @@ const AnimeCard = ({
               {props.watchDetail && (
                 <>
                   <p className="text-xs text-gray-400">
-                    Bölüm {props.watchDetail.episodeNumber} -{" "}
-                    {formatSecondsToMMSS(props.watchDetail.current)} /{" "}
-                    {formatSecondsToMMSS(props.watchDetail.timestamp)}
+                    Bölüm {props.watchDetail.episodeNumber}
+                    {safeTotal > 0 && (
+                      <>
+                        {" - "}
+                        {formatSecondsToMMSS(props.watchDetail.current)} /{" "}
+                        {formatSecondsToMMSS(props.watchDetail.timestamp)}
+                      </>
+                    )}
                   </p>
-                  <Progress value={percentage} />
+                  {safeTotal > 0 && <Progress value={percentage} />}
                 </>
               )}
               <div className="flex flex-wrap items-center gap-1.5 mt-0.5">

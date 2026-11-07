@@ -126,11 +126,11 @@ function ProfilePage() {
           : null,
       );
       setAuth({ ...auth, background: nextBackground });
-      toast.success("Kapak görseli başarıyla güncellendi", {
+      toast.success("Background başarıyla güncellendi", {
         style: { background: "green" },
       });
     } catch (err: any) {
-      toast.error(err?.message || "Kapak görseli güncellenemedi", {
+      toast.error(err?.message || "Background güncellenemedi", {
         style: { background: "red" },
       });
     } finally {

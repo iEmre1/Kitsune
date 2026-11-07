@@ -20,6 +20,10 @@ import { cn } from "@/lib/utils";
 import { buildStreamProxyUrl } from "@/lib/local-proxy";
 import { useAuthStore } from "@/store/auth-store";
 import useBookMarks from "@/hooks/use-get-bookmark";
+import {
+  getLocalWatchRecord,
+  saveLocalWatchProgress,
+} from "@/lib/local-watch-history";
 import { pb } from "@/lib/pocketbase";
 import Image from "next/image";
 import { trackEvent } from "@/lib/analytics";
@@ -123,10 +127,29 @@ function KitsunePlayer({
 
   const ensureBookmarkAndSync = React.useCallback(
     async (currentTime: number, duration: number) => {
+      const srv = serversDataRef.current;
+      const info = animeInfoRef.current;
+      const epNum = parseInt(srv.episodeNo, 10) || 1;
+      const currentUserId = auth?.id || pb.authStore.record?.id;
+
+      // Guests keep their progress locally; there is no server-side owner.
+      if (!currentUserId) {
+        if (info?.id && info.id !== "0" && duration > 0) {
+          saveLocalWatchProgress({
+            animeId: String(info.id),
+            animeTitle: info.title || "Anime",
+            animePoster: info.image || "",
+            episodeId: srv.episodeId,
+            episodeNumber: epNum,
+            current: Math.round(currentTime),
+            timestamp: Math.round(duration),
+          });
+        }
+        return;
+      }
+
       const bId = await ensureBookmarkId();
       if (!bId) return;
-      const srv = serversDataRef.current;
-      const epNum = parseInt(srv.episodeNo, 10) || 1;
       const recordId = await syncWatchProgress(
         bId,
         watchedRecordIdRef.current,
@@ -144,7 +167,7 @@ function KitsunePlayer({
         }
       }
     },
-    [ensureBookmarkId, syncWatchProgress],
+    [auth?.id, ensureBookmarkId, syncWatchProgress],
   );
 
   const firstSource = episodeInfo?.sources?.[0];
@@ -171,12 +194,45 @@ function KitsunePlayer({
 
   useEffect(() => {
     const currentUserId = auth?.id || pb.authStore.record?.id;
-    if (!currentUserId || !animeInfo.id || !serversData.episodeId) {
+    if (!animeInfo.id || animeInfo.id === "0" || !serversData.episodeId) {
       bookmarkIdRef.current = null;
       watchedRecordIdRef.current = null;
       watchHistoryIdsRef.current = [];
       hasMetMinWatchTimeRef.current = false;
       initialSeekTimeRef.current = null;
+      return;
+    }
+
+    const applyRestoredProgress = (current: number | null) => {
+      initialSeekTimeRef.current = current;
+      hasMetMinWatchTimeRef.current =
+        current !== null && current >= WATCH_PROGRESS_MIN_WATCH_TIME;
+      if (
+        artInstanceRef.current &&
+        current &&
+        current > 0 &&
+        artInstanceRef.current.duration > 0 &&
+        current < artInstanceRef.current.duration - 5 &&
+        artInstanceRef.current.currentTime < 5
+      ) {
+        artInstanceRef.current.seek = current;
+        initialSeekTimeRef.current = null;
+      }
+    };
+
+    // Guests restore their progress from localStorage instead of PocketBase.
+    if (!currentUserId) {
+      bookmarkIdRef.current = null;
+      watchedRecordIdRef.current = null;
+      watchHistoryIdsRef.current = [];
+      const localRecord = getLocalWatchRecord(
+        animeInfo.id,
+        serversData.episodeId,
+        parseInt(serversData.episodeNo, 10) || 1,
+      );
+      applyRestoredProgress(
+        localRecord && localRecord.current > 0 ? localRecord.current : null,
+      );
       return;
     }
 
@@ -217,24 +273,11 @@ function KitsunePlayer({
 
         if (existingWatched) {
           watchedRecordIdRef.current = existingWatched.id;
-          initialSeekTimeRef.current =
+          applyRestoredProgress(
             typeof existingWatched.current === "number"
               ? existingWatched.current
-              : null;
-          hasMetMinWatchTimeRef.current =
-            initialSeekTimeRef.current !== null &&
-            initialSeekTimeRef.current >= WATCH_PROGRESS_MIN_WATCH_TIME;
-          if (
-            artInstanceRef.current &&
-            initialSeekTimeRef.current &&
-            initialSeekTimeRef.current > 0 &&
-            artInstanceRef.current.duration > 0 &&
-            initialSeekTimeRef.current < artInstanceRef.current.duration - 5 &&
-            artInstanceRef.current.currentTime < 5
-          ) {
-            artInstanceRef.current.seek = initialSeekTimeRef.current;
-            initialSeekTimeRef.current = null;
-          }
+              : null,
+          );
         } else {
           watchedRecordIdRef.current = null;
           initialSeekTimeRef.current = null;

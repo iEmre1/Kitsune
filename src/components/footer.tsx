@@ -6,10 +6,10 @@ const Footer = () => {
   return (
     <footer className="w-full bg-base-300 shadow-xl p-5 flex flex-col items-center space-y-5">
       <div className="flex space-x-5 items-center">
-        <a href="https://animke.com" target="_blank">
+        <a href="https://discord.gg/wDK4zSuV3x" target="_blank">
             <DiscordLogoIcon suppressHydrationWarning width="25" height="25" />
         </a>
-        <a href="https://github.com/Dovakiin0/Kitsune" target="_blank">
+        <a href="https://animke.com" target="_blank">
             <InstagramLogoIcon suppressHydrationWarning width="25" height="25" />
         </a>
       </div>
